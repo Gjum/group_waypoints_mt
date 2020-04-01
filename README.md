@@ -17,3 +17,5 @@ Create and share waypoints in PlayerManager groups.
 
 - `/wp new <group> [name]` - Instantly create a waypoint at the current position, in group `group`, with name `name` (default: x, y, z coordinates).
 - `/wp manage [group]` - Open a GUI to manage all waypoints in group `group` (default: all groups).
+
+[![Build Status](https://travis-ci.com/Gjum/mt_group_waypoints.svg?branch=master)](https://travis-ci.com/Gjum/mt_group_waypoints)
