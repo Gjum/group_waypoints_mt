@@ -2,10 +2,12 @@
 
 local util = ...
 
+local exports = {}
+
 --=== events ===--
 
 local waypoint_visible_checks = {}
-local function allow_player_see_waypoint(check)
+function exports.allow_player_see_waypoint(check)
 	waypoint_visible_checks[#waypoint_visible_checks + 1] = check
 end
 
@@ -58,7 +60,7 @@ local function hide_waypoint_from_player(plname, wpid)
 	all_waypoint_huds[wpid][plname] = nil
 end
 
-local function update_waypoint_for_player(plname, waypoint)
+function exports.update_waypoint_for_player(plname, waypoint)
 	local wpid = waypoint.id
 	local groupid = waypoint.groupid
 
@@ -101,7 +103,7 @@ local function update_waypoint_for_player(plname, waypoint)
 	show_waypoint_to_player(plname, waypoint)
 end
 
-local function update_waypoint(waypoint)
+function exports.update_waypoint(waypoint)
 	local wpid = waypoint.id
 
 	-- TODO optimize: visibility check is called twice for all players that are currently seeing the waypoint
@@ -115,22 +117,22 @@ local function update_waypoint(waypoint)
 
 	-- show to all players that may see it
 	for _, pm_player in ipairs(util.get_group_members(waypoint.groupid) or {}) do
-		update_waypoint_for_player(pm_player.name, waypoint)
+		exports.update_waypoint_for_player(pm_player.name, waypoint)
 	end
 end
 
 -- show/hide all waypoints of that player
-local function update_all_waypoints_for_player(plname)
+function exports.update_all_waypoints_for_player(plname)
 	-- hide all waypoints that are now no longer visible
 	for wpid, hud_id in pairs(all_player_huds[plname] or {}) do
 		local waypoint = group_waypoints.get_waypoint_by_id(wpid)
-		update_waypoint_for_player(plname, waypoint)
+		exports.update_waypoint_for_player(plname, waypoint)
 	end
 	-- show all waypoints that are now visible
 	for _, group in ipairs(util.get_player_groups(plname) or {}) do
 		local group_wps = group_waypoints.get_waypoints_in_group(group.id) or {}
 		for wpid, waypoint in pairs(group_wps) do
-			update_waypoint_for_player(plname, waypoint)
+			exports.update_waypoint_for_player(plname, waypoint)
 		end
 	end
 end
@@ -139,13 +141,13 @@ end
 
 group_waypoints.on_waypoint_created(
 	function(waypoint)
-		update_waypoint(waypoint)
+		exports.update_waypoint(waypoint)
 	end
 )
 
 group_waypoints.on_waypoint_updated(
 	function(waypoint)
-		update_waypoint(waypoint)
+		exports.update_waypoint(waypoint)
 	end
 )
 
@@ -166,7 +168,7 @@ group_waypoints.on_player_defaults_updated(
 	function(event)
 		-- local defaults = event.defaults
 		-- TODO only update the waypoints/groups that are impacted
-		update_all_waypoints_for_player(event.plname)
+		exports.update_all_waypoints_for_player(event.plname)
 	end
 )
 
@@ -174,7 +176,7 @@ group_waypoints.on_group_setting_updated(
 	function(event)
 		local group_wps = group_waypoints.get_waypoints_in_group(event.groupid)
 		for wpid, waypoint in pairs(group_wps or {}) do
-			update_waypoint_for_player(event.plname, waypoint)
+			exports.update_waypoint_for_player(event.plname, waypoint)
 		end
 	end
 )
@@ -182,14 +184,8 @@ group_waypoints.on_group_setting_updated(
 group_waypoints.on_waypoint_setting_updated(
 	function(event)
 		local waypoint = group_waypoints.get_waypoint_by_id(event.wpid)
-		update_waypoint_for_player(event.plname, waypoint)
+		exports.update_waypoint_for_player(event.plname, waypoint)
 	end
 )
 
-group_waypoints.allow_player_see_waypoint = allow_player_see_waypoint
-
-return {
-	update_waypoint = update_waypoint,
-	update_waypoint_for_player = update_waypoint_for_player,
-	update_all_waypoints_for_player = update_all_waypoints_for_player
-}
+return exports
