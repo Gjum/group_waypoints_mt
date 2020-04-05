@@ -66,7 +66,8 @@ local util = {
 	emit_allowed_check = emit_allowed_check,
 	emit_event = emit_event,
 	get_group_members = get_group_members,
-	get_group_name = get_group_name
+	get_group_name = get_group_name,
+	get_player_groups = get_player_groups
 }
 
 local waypoints = loadfile(minetest.get_modpath("group_waypoints") .. "/waypoints.lua")(util)
@@ -82,12 +83,7 @@ local hud = loadfile(minetest.get_modpath("group_waypoints") .. "/hud.lua")(util
 minetest.register_on_joinplayer(
 	function(player)
 		local plname = player:get_player_name()
-		-- show the player's visible waypoints
-		for _, group in ipairs(get_player_groups(plname)) do
-			local group_wps = group_waypoints.get_waypoints_in_group(group.id)
-			for wpid, waypoint in pairs(group_wps) do
-				hud.update_waypoint_for_player(plname, waypoint)
-			end
+		hud.update_all_waypoints_for_player(plname)
 		end
 	end
 )

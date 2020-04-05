@@ -25,8 +25,7 @@ local function show_waypoint_to_player(plname, waypoint)
 		text = "m [" .. group_name .. "]",
 		world_pos = waypoint.pos,
 		name = waypoint.name,
-		number = color,
-		alignment = {x = 0, y = 0}
+		number = color
 	}
 
 	local player_huds = all_player_huds[plname]
@@ -93,7 +92,7 @@ local function update_waypoint_for_player(plname, waypoint)
 	if existing_hud_id then
 		-- TODO update hud instead of remove+create
 		local player = minetest.get_player_by_name(plname)
-		player:hud_remove(hud_id)
+		player:hud_remove(existing_hud_id)
 		show_waypoint_to_player(plname, waypoint)
 
 		return
@@ -117,6 +116,22 @@ local function update_waypoint(waypoint)
 	-- show to all players that may see it
 	for _, pm_player in ipairs(util.get_group_members(waypoint.groupid) or {}) do
 		update_waypoint_for_player(pm_player.name, waypoint)
+	end
+end
+
+-- show/hide all waypoints of that player
+local function update_all_waypoints_for_player(plname)
+	-- hide all waypoints that are now no longer visible
+	for wpid, hud_id in pairs(all_player_huds[event.plname] or {}) do
+		local waypoint = group_waypoints.get_waypoint_by_id(wpid)
+		update_waypoint_for_player(event.plname, waypoint)
+	end
+	-- show all waypoints that are now visible
+	for _, group in ipairs(util.get_player_groups(plname) or {}) do
+		local group_wps = group_waypoints.get_waypoints_in_group(group.id) or {}
+		for wpid, waypoint in pairs(group_wps) do
+			hud.update_waypoint_for_player(plname, waypoint)
+		end
 	end
 end
 
@@ -149,11 +164,9 @@ group_waypoints.on_waypoint_deleted(
 
 group_waypoints.on_player_defaults_updated(
 	function(event)
-		local plname = event.plname
-		local defaults = event.defaults
-		for wpid, hud_id in pairs(all_player_huds[player] or {}) do
-			update_waypoint_for_player(event.plname, waypoint)
-		end
+		-- local defaults = event.defaults
+		-- TODO only update the waypoints/groups that are impacted
+		update_all_waypoints_for_player(event.plname)
 	end
 )
 
@@ -177,5 +190,6 @@ group_waypoints.allow_player_see_waypoint = allow_player_see_waypoint
 
 return {
 	update_waypoint = update_waypoint,
-	update_waypoint_for_player = update_waypoint_for_player
+	update_waypoint_for_player = update_waypoint_for_player,
+	update_all_waypoints_for_player = update_all_waypoints_for_player
 }

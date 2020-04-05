@@ -4,6 +4,27 @@
 
 local util = ...
 
+--=== events ===--
+
+local function emit_group_updated_event(plname, groupid, config)
+	util.emit_event(group_updated_handlers, {plname = plname, groupid = groupid, config = config})
+end
+
+local player_defaults_updated_handlers = {}
+local function on_player_defaults_updated(handler)
+	player_defaults_updated_handlers[#player_defaults_updated_handlers + 1] = handler
+end
+
+local group_updated_handlers = {}
+local function on_group_setting_updated(handler)
+	group_updated_handlers[#group_updated_handlers + 1] = handler
+end
+
+local waypoint_updated_handlers = {}
+local function on_waypoint_setting_updated(handler)
+	waypoint_updated_handlers[#waypoint_updated_handlers + 1] = handler
+end
+
 --=== state ===--
 
 local all_group_overrides = {} -- groupid -> plname -> {visible, range, color}
@@ -63,7 +84,7 @@ end
 
 local function set_defaults_for_player(plname, defaults)
 	all_player_defaults[plname] = defaults
-	util.emit_event(all_player_defaults_updated_handlers, {plname = plname, defaults = defaults})
+	util.emit_event(player_defaults_updated_handlers, {plname = plname, defaults = defaults})
 end
 
 local function get_group_visible_for_player(plname, groupid)
@@ -110,29 +131,8 @@ end
 -- If [visible] is nil, rendering uses the group's visibility setting (dynamic).
 local function set_waypoint_visible_for_player(plname, wpid, visible)
 	local config = get_or_create_deep2(all_wp_player_overrides, wpid, plname)
-	config.color = color
+	config.visible = visible
 	util.emit_event(waypoint_updated_handlers, {plname = plname, wpid = wpid, config = config})
-end
-
---=== events ===--
-
-local function emit_group_updated_event(plname, groupid, config)
-	util.emit_event(group_updated_handlers, {plname = plname, groupid = groupid, config = config})
-end
-
-local player_defaults_updated_handlers = {}
-local function on_player_defaults_updated(handler)
-	player_defaults_updated_handlers[#player_defaults_updated_handlers + 1] = handler
-end
-
-local group_updated_handlers = {}
-local function on_group_setting_updated(handler)
-	group_updated_handlers[#group_updated_handlers + 1] = handler
-end
-
-local waypoint_updated_handlers = {}
-local function on_waypoint_setting_updated(handler)
-	waypoint_updated_handlers[#waypoint_updated_handlers + 1] = handler
 end
 
 --=== event handlers ===--

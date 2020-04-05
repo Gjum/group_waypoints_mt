@@ -132,17 +132,17 @@ end
 --=== delete/update ===--
 
 local function delete_waypoint(plname, wpid)
-	local wp = all_wps_by_id[wp.id]
+	local wp = all_wps_by_id[wpid]
 	if not wp then
 		error("Cannot delete unknown waypoint id " .. wpid)
 	end
 	if not util.emit_allowed_check(deleted_checks, plname, wp) then
-		error("Player '" .. plname .. "' cannot delete waypoint id " .. wpid)
+		error("Player '" .. plname .. "' is not allowed to delete waypoint id " .. wpid)
 	end
 
-	all_wps_by_id[wp.id] = nil
+	all_wps_by_id[wpid] = nil
 	local group_wps = get_waypoints_in_group(wp.groupid)
-	group_wps[wp.id] = nil
+	group_wps[wpid] = nil
 
 	util.emit_event(deleted_handlers, wp)
 end
@@ -153,7 +153,7 @@ local function set_waypoint_name(plname, wpid, name)
 		error("Cannot update unknown waypoint id " .. wpid)
 	end
 	if not util.emit_allowed_check(updated_checks, plname, wp) then
-		error("Player '" .. plname .. "' cannot update waypoint id " .. wpid)
+		error("Player '" .. plname .. "' is not allowed to update waypoint id " .. wpid)
 	end
 
 	wp.name = name or coord_name(wp)
@@ -167,7 +167,7 @@ local function set_waypoint_pos(plname, wpid, pos)
 		error("Cannot update unknown waypoint id " .. wpid)
 	end
 	if not util.emit_allowed_check(updated_checks, plname, wp) then
-		error("Player '" .. plname .. "' cannot update waypoint id " .. wpid)
+		error("Player '" .. plname .. "' is not allowed to update waypoint id " .. wpid)
 	end
 
 	wp.pos = pos
@@ -181,7 +181,7 @@ local function set_waypoint_color(plname, wpid, color)
 		error("Cannot update unknown waypoint id " .. wpid)
 	end
 	if not util.emit_allowed_check(updated_checks, plname, wp) then
-		error("Player '" .. plname .. "' cannot update waypoint id " .. wpid)
+		error("Player '" .. plname .. "' is not allowed to update waypoint id " .. wpid)
 	end
 
 	wp.color = color
