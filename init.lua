@@ -20,28 +20,23 @@ end
 --=== integrations pt. 1/2 ===--
 
 local function get_group_name(groupid)
-	-- return pm.get_group_by_id(groupid).name
-	return "Group" .. groupid -- XXX
+	return (pm.get_group_by_id(groupid) or {}).name
 end
 
+-- returns nil or list of {name, id, permission}
 local function get_group_members(groupid)
-	-- return pm.get_players_for_group(groupid)
-	return {} -- XXX {name, id, permission}
+	return pm.get_players_for_group(groupid)
 end
 
+-- returns nil or list of {name, id, permission}
 local function get_player_groups(plname)
-	-- local pm_player = pm.get_player_by_name(player_name)
-	-- return pm.get_groups_for_player(pm_player.id)
-	return {} -- XXX {name, id, permission}
+	local pm_player = pm.get_player_by_name(player_name)
+	return pm.get_groups_for_player(pm_player.id)
 end
 
 local function get_player_rank_in_group(plname, groupid)
-	for _, group in ipairs(get_player_groups(plname)) do
-		if group.id == groupid then
-			return group.permission
-		end
-	end
-	return nil -- not in group
+	local pm_player = pm.get_player_by_name(player_name)
+	return (get_player_group(pm_player.id, groupid) or {}).permission
 end
 
 local function get_any_group_for_player(plname)
