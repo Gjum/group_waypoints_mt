@@ -30,13 +30,13 @@ end
 
 -- returns nil or list of {name, id, permission}
 local function get_player_groups(plname)
-	local pm_player = pm.get_player_by_name(player_name)
+	local pm_player = pm.get_player_by_name(plname)
 	return pm.get_groups_for_player(pm_player.id)
 end
 
 local function get_player_rank_in_group(plname, groupid)
-	local pm_player = pm.get_player_by_name(player_name)
-	return (get_player_group(pm_player.id, groupid) or {}).permission
+	local pm_player = pm.get_player_by_name(plname)
+	return (pm.get_player_group(pm_player.id, groupid) or {}).permission
 end
 
 local function get_any_group_for_player(plname)
@@ -79,7 +79,6 @@ minetest.register_on_joinplayer(
 	function(player)
 		local plname = player:get_player_name()
 		hud.update_all_waypoints_for_player(plname)
-		end
 	end
 )
 
@@ -92,7 +91,7 @@ minetest.register_on_dieplayer(
 			print("Cannot create death waypoint: Player " .. plname .. " has not configured a default group.")
 			return
 		end
-		local some_wp =
+		local death_wp =
 			group_waypoints.create_waypoint {
 			name = plname .. " Death",
 			pos = player:get_pos(),

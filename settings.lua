@@ -6,13 +6,14 @@ local util = ...
 
 --=== events ===--
 
-local function emit_group_updated_event(plname, groupid, config)
-	util.emit_event(group_updated_handlers, {plname = plname, groupid = groupid, config = config})
-end
-
 local player_defaults_updated_handlers = {}
 local function on_player_defaults_updated(handler)
 	player_defaults_updated_handlers[#player_defaults_updated_handlers + 1] = handler
+end
+
+local waypoint_updated_handlers = {}
+local function on_waypoint_setting_updated(handler)
+	waypoint_updated_handlers[#waypoint_updated_handlers + 1] = handler
 end
 
 local group_updated_handlers = {}
@@ -20,9 +21,8 @@ local function on_group_setting_updated(handler)
 	group_updated_handlers[#group_updated_handlers + 1] = handler
 end
 
-local waypoint_updated_handlers = {}
-local function on_waypoint_setting_updated(handler)
-	waypoint_updated_handlers[#waypoint_updated_handlers + 1] = handler
+local function emit_group_updated_event(plname, groupid, config)
+	util.emit_event(group_updated_handlers, {plname = plname, groupid = groupid, config = config})
 end
 
 --=== state ===--

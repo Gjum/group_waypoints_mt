@@ -122,15 +122,15 @@ end
 -- show/hide all waypoints of that player
 local function update_all_waypoints_for_player(plname)
 	-- hide all waypoints that are now no longer visible
-	for wpid, hud_id in pairs(all_player_huds[event.plname] or {}) do
+	for wpid, hud_id in pairs(all_player_huds[plname] or {}) do
 		local waypoint = group_waypoints.get_waypoint_by_id(wpid)
-		update_waypoint_for_player(event.plname, waypoint)
+		update_waypoint_for_player(plname, waypoint)
 	end
 	-- show all waypoints that are now visible
 	for _, group in ipairs(util.get_player_groups(plname) or {}) do
 		local group_wps = group_waypoints.get_waypoints_in_group(group.id) or {}
 		for wpid, waypoint in pairs(group_wps) do
-			hud.update_waypoint_for_player(plname, waypoint)
+			update_waypoint_for_player(plname, waypoint)
 		end
 	end
 end

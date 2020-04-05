@@ -3,6 +3,8 @@ allow_defined_top = true
 
 globals = {
     "minetest",
+    "group_waypoints",
+    "pm",
 }
 
 read_globals = {
