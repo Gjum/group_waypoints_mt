@@ -44,10 +44,12 @@ end
 local all_wps_by_id = {} -- wpid -> wp
 local all_wps_by_groupid = {} -- groupid -> wpid -> wp
 
-local largest_id = 0
-local function next_id()
-	largest_id = largest_id + 1
-	return largest_id
+local function coord_name(wp)
+	return wp.pos.x .. " " .. wp.pos.y .. " " .. wp.pos.z
+end
+
+local function next_id(wp)
+	return coord_name(wp) .. " " .. wp.groupid
 end
 
 -- player pos -> block pos
@@ -59,13 +61,11 @@ local function pos_adjusted(pos)
 	}
 end
 
-local function coord_name(wp)
-	return wp.pos.x .. " " .. wp.pos.y .. " " .. wp.pos.z
-end
-
 local function clean_wp(wp_in)
+	-- TODO ensure wp_in.groupid exists
+
 	local wp = {
-		id = wp_in.id or next_id(),
+		id = wp_in.id,
 		groupid = wp_in.groupid,
 		creator = wp_in.creator,
 		created_at = wp_in.created_at or os.time(),
@@ -73,9 +73,13 @@ local function clean_wp(wp_in)
 		pos = pos_adjusted(wp_in.pos),
 		color = wp_in.color -- may be nil, in that case the player's group color is used
 	}
+
+	wp.id = wp.id or next_id(wp)
+
 	if not wp.name or wp.name == "" then
 		wp.name = coord_name(wp)
 	end
+
 	return wp
 end
 
@@ -94,9 +98,6 @@ end
 
 function exports.load_waypoints(waypoints)
 	for _, wp_in in pairs(waypoints) do
-		if wp_in.id and largest_id < wp_in.id then
-			largest_id = wp_in.id
-		end
 		local wp = clean_wp(wp_in)
 		all_wps_by_id[wp.id] = wp
 		local group_wps = exports.get_waypoints_in_group(wp.groupid)
@@ -114,13 +115,13 @@ function exports.create_waypoint(wp_in)
 		error("Tried creating waypoint without creator")
 	end
 
-	wp_in.id = next_id()
+	wp_in.id = next_id(wp_in)
 	local wp = clean_wp(wp_in)
 
 	local plname = wp.creator
 
 	if not util.emit_allowed_check(created_checks, plname, wp) then
-		error("Player '" .. plname .. "' cannot create waypoint in group" .. wp_in.group)
+		error("Player '" .. plname .. "' cannot create waypoint in group " .. dump(wp.groupid))
 	end
 
 	all_wps_by_id[wp.id] = wp
