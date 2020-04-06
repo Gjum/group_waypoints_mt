@@ -2,7 +2,7 @@
 
 -- TODO: after each set_*, clean up configs where all entries are null
 
-local util = ...
+local utils = (...).utils
 
 local exports = {}
 
@@ -24,7 +24,7 @@ function exports.on_group_setting_updated(handler)
 end
 
 local function emit_group_updated_event(plname, groupid, config)
-	util.emit_event(group_updated_handlers, {plname = plname, groupid = groupid, config = config})
+	utils.emit_event(group_updated_handlers, {plname = plname, groupid = groupid, config = config})
 end
 
 --=== state ===--
@@ -86,7 +86,7 @@ end
 
 function exports.set_defaults_for_player(plname, defaults)
 	all_player_defaults[plname] = defaults
-	util.emit_event(player_defaults_updated_handlers, {plname = plname, defaults = defaults})
+	utils.emit_event(player_defaults_updated_handlers, {plname = plname, defaults = defaults})
 end
 
 function exports.get_group_visible_for_player(plname, groupid)
@@ -134,7 +134,7 @@ end
 function exports.set_waypoint_visible_for_player(plname, wpid, visible)
 	local config = get_or_create_deep2(all_wp_player_overrides, wpid, plname)
 	config.visible = visible
-	util.emit_event(waypoint_updated_handlers, {plname = plname, wpid = wpid, config = config})
+	utils.emit_event(waypoint_updated_handlers, {plname = plname, wpid = wpid, config = config})
 end
 
 --=== event handlers ===--

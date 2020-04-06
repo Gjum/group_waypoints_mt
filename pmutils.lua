@@ -1,21 +1,6 @@
+-- PlayerManager integrations
+
 local exports = {}
-
-function exports.emit_allowed_check(checks, plname, event)
-	for _, check in pairs(checks) do
-		if not check(plname, event) then
-			return false
-		end
-	end
-	return true
-end
-
-function exports.emit_event(handlers, event)
-	for _, handler in pairs(handlers) do
-		handler(event)
-	end
-end
-
---=== PlayerManager integrations ===--
 
 function exports.get_group_name(groupid)
 	return (pm.get_group_by_id(groupid) or {}).name

@@ -1,6 +1,7 @@
 -- This module updates the player HUD to display the visible waypoints.
 
-local util = ...
+local utils = (...).utils
+local pmutils = (...).pmutils
 
 local exports = {}
 
@@ -18,12 +19,13 @@ local all_waypoint_huds = {} -- wpid -> plname -> hud_id
 
 local function show_waypoint_to_player(plname, waypoint)
 	local player = minetest.get_player_by_name(plname)
-	local group_name = util.get_group_name(waypoint.groupid)
+	local group_name = pmutils.get_group_name(waypoint.groupid)
 	local color = waypoint.color or group_waypoints.get_group_color_for_player(plname, waypoint.groupid) or 0xFF00FF
 
 	local hud_id =
 		player:hud_add {
 		hud_elem_type = "waypoint",
+		alignment = {x = 0, y = 0},
 		text = "m [" .. group_name .. "]",
 		world_pos = waypoint.pos,
 		name = waypoint.name,
@@ -64,7 +66,7 @@ function exports.update_waypoint_for_player(plname, waypoint)
 	local wpid = waypoint.id
 	local groupid = waypoint.groupid
 
-	local player_can_see_waypoint = util.emit_allowed_check(waypoint_visible_checks, plname, waypoint)
+	local player_can_see_waypoint = utils.emit_allowed_check(waypoint_visible_checks, plname, waypoint)
 	if not player_can_see_waypoint then
 		hide_waypoint_from_player(plname, wpid)
 		return
@@ -110,13 +112,13 @@ function exports.update_waypoint(waypoint)
 
 	-- remove from all players that were seeing it but may no longer see it
 	for plname, hud_id in pairs(all_waypoint_huds[wpid] or {}) do
-		if not util.emit_allowed_check(waypoint_visible_checks, plname, waypoint) then
+		if not utils.emit_allowed_check(waypoint_visible_checks, plname, waypoint) then
 			hide_waypoint_from_player(plname, wpid)
 		end
 	end
 
 	-- show to all players that may see it
-	for _, pm_player in ipairs(util.get_group_members(waypoint.groupid) or {}) do
+	for _, pm_player in ipairs(pmutils.get_group_members(waypoint.groupid) or {}) do
 		exports.update_waypoint_for_player(pm_player.name, waypoint)
 	end
 end
@@ -129,7 +131,7 @@ function exports.update_all_waypoints_for_player(plname)
 		exports.update_waypoint_for_player(plname, waypoint)
 	end
 	-- show all waypoints that are now visible
-	for _, group in ipairs(util.get_player_groups(plname) or {}) do
+	for _, group in ipairs(pmutils.get_player_groups(plname) or {}) do
 		local group_wps = group_waypoints.get_waypoints_in_group(group.id) or {}
 		for wpid, waypoint in pairs(group_wps) do
 			exports.update_waypoint_for_player(plname, waypoint)

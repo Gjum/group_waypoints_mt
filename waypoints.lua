@@ -3,7 +3,7 @@
 -- C/U/D check if the player has access, via the corresponding allow_waypoint_* event.
 -- They throw an error, so the caller needs to check access before calling.
 
-local util = ...
+local utils = (...).utils
 
 local exports = {}
 
@@ -44,12 +44,8 @@ end
 local all_wps_by_id = {} -- wpid -> wp
 local all_wps_by_groupid = {} -- groupid -> wpid -> wp
 
-local function coord_name(wp)
-	return wp.pos.x .. " " .. wp.pos.y .. " " .. wp.pos.z
-end
-
 local function next_id(wp)
-	return coord_name(wp) .. " " .. wp.groupid
+	return utils.pos_to_str(wp.pos, "/") .. "/" .. wp.groupid
 end
 
 -- player pos -> block pos
@@ -77,7 +73,7 @@ local function clean_wp(wp_in)
 	wp.id = wp.id or next_id(wp)
 
 	if not wp.name or wp.name == "" then
-		wp.name = coord_name(wp)
+		wp.name = utils.pos_to_str(wp.pos)
 	end
 
 	return wp
@@ -120,7 +116,7 @@ function exports.create_waypoint(wp_in)
 
 	local plname = wp.creator
 
-	if not util.emit_allowed_check(created_checks, plname, wp) then
+	if not utils.emit_allowed_check(created_checks, plname, wp) then
 		error("Player '" .. plname .. "' cannot create waypoint in group " .. dump(wp.groupid))
 	end
 
@@ -128,7 +124,7 @@ function exports.create_waypoint(wp_in)
 	local group_wps = exports.get_waypoints_in_group(wp.groupid)
 	group_wps[wp.id] = wp
 
-	util.emit_event(created_handlers, wp)
+	utils.emit_event(created_handlers, wp)
 	return wp
 end
 
@@ -139,7 +135,7 @@ function exports.delete_waypoint(plname, wpid)
 	if not wp then
 		error("Cannot delete unknown waypoint id " .. wpid)
 	end
-	if not util.emit_allowed_check(deleted_checks, plname, wp) then
+	if not utils.emit_allowed_check(deleted_checks, plname, wp) then
 		error("Player '" .. plname .. "' is not allowed to delete waypoint id " .. wpid)
 	end
 
@@ -147,7 +143,7 @@ function exports.delete_waypoint(plname, wpid)
 	local group_wps = exports.get_waypoints_in_group(wp.groupid)
 	group_wps[wpid] = nil
 
-	util.emit_event(deleted_handlers, wp)
+	utils.emit_event(deleted_handlers, wp)
 end
 
 function exports.set_waypoint_name(plname, wpid, name)
@@ -155,12 +151,12 @@ function exports.set_waypoint_name(plname, wpid, name)
 	if not wp then
 		error("Cannot update unknown waypoint id " .. wpid)
 	end
-	if not util.emit_allowed_check(updated_checks, plname, wp) then
+	if not utils.emit_allowed_check(updated_checks, plname, wp) then
 		error("Player '" .. plname .. "' is not allowed to update waypoint id " .. wpid)
 	end
 
-	wp.name = name or coord_name(wp)
-	util.emit_event(updated_handlers, wp)
+	wp.name = name or utils.pos_to_str(wp.pos)
+	utils.emit_event(updated_handlers, wp)
 	return wp
 end
 
@@ -169,12 +165,12 @@ function exports.set_waypoint_pos(plname, wpid, pos)
 	if not wp then
 		error("Cannot update unknown waypoint id " .. wpid)
 	end
-	if not util.emit_allowed_check(updated_checks, plname, wp) then
+	if not utils.emit_allowed_check(updated_checks, plname, wp) then
 		error("Player '" .. plname .. "' is not allowed to update waypoint id " .. wpid)
 	end
 
 	wp.pos = pos
-	util.emit_event(updated_handlers, wp)
+	utils.emit_event(updated_handlers, wp)
 	return wp
 end
 
@@ -183,12 +179,12 @@ function exports.set_waypoint_color(plname, wpid, color)
 	if not wp then
 		error("Cannot update unknown waypoint id " .. wpid)
 	end
-	if not util.emit_allowed_check(updated_checks, plname, wp) then
+	if not utils.emit_allowed_check(updated_checks, plname, wp) then
 		error("Player '" .. plname .. "' is not allowed to update waypoint id " .. wpid)
 	end
 
 	wp.color = color
-	util.emit_event(updated_handlers, wp)
+	utils.emit_event(updated_handlers, wp)
 	return wp
 end
 
