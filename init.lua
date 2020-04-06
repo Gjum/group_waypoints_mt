@@ -47,6 +47,8 @@ group_waypoints.allow_player_see_waypoint = internal.hud.allow_player_see_waypoi
 
 --=== event handlers ===--
 
+loadfile(minetest.get_modpath("group_waypoints") .. "/commands.lua")(internal)
+
 loadfile(minetest.get_modpath("group_waypoints") .. "/mt_events.lua")(internal)
 
 --=== integrations ===--

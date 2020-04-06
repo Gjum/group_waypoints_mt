@@ -6,6 +6,10 @@ function exports.get_group_name(groupid)
 	return (pm.get_group_by_id(groupid) or {}).name
 end
 
+function exports.get_group_id_by_name(group_name)
+	return (pm.get_group_by_name(group_name) or {}).id
+end
+
 -- returns nil or list of {name, id, permission}
 function exports.get_group_members(groupid)
 	return pm.get_players_for_group(groupid)
