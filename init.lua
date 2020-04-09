@@ -4,11 +4,13 @@ group_waypoints = {} -- modules add functions to this table
 
 local internal = {}
 
-internal.utils = loadfile(minetest.get_modpath("group_waypoints") .. "/utils.lua")()
+local modpath = minetest.get_modpath("group_waypoints")
 
-internal.pmutils = loadfile(minetest.get_modpath("group_waypoints") .. "/pmutils.lua")()
+internal.utils = loadfile(modpath .. "/utils.lua")()
 
-internal.waypoints = loadfile(minetest.get_modpath("group_waypoints") .. "/waypoints.lua")(internal)
+internal.pmutils = loadfile(modpath .. "/pmutils.lua")()
+
+internal.waypoints = loadfile(modpath .. "/waypoints.lua")(internal)
 group_waypoints.get_waypoint_by_id = internal.waypoints.get_waypoint_by_id
 group_waypoints.get_waypoints_in_group = internal.waypoints.get_waypoints_in_group
 group_waypoints.create_waypoint = internal.waypoints.create_waypoint
@@ -23,7 +25,7 @@ group_waypoints.allow_waypoint_created = internal.waypoints.allow_waypoint_creat
 group_waypoints.allow_waypoint_updated = internal.waypoints.allow_waypoint_updated
 group_waypoints.allow_waypoint_deleted = internal.waypoints.allow_waypoint_deleted
 
-internal.settings = loadfile(minetest.get_modpath("group_waypoints") .. "/settings.lua")(internal)
+internal.settings = loadfile(modpath .. "/settings.lua")(internal)
 group_waypoints.get_defaults_for_player = internal.settings.get_defaults_for_player
 group_waypoints.set_defaults_for_player = internal.settings.set_defaults_for_player
 group_waypoints.get_group_visible_for_player = internal.settings.get_group_visible_for_player
@@ -38,7 +40,7 @@ group_waypoints.on_player_defaults_updated = internal.settings.on_player_default
 group_waypoints.on_group_setting_updated = internal.settings.on_group_setting_updated
 group_waypoints.on_waypoint_setting_updated = internal.settings.on_waypoint_setting_updated
 
-internal.hud = loadfile(minetest.get_modpath("group_waypoints") .. "/hud.lua")(internal)
+internal.hud = loadfile(modpath .. "/hud.lua")(internal)
 group_waypoints.allow_player_see_waypoint = internal.hud.allow_player_see_waypoint
 
 --=== startup ===--
@@ -47,13 +49,13 @@ group_waypoints.allow_player_see_waypoint = internal.hud.allow_player_see_waypoi
 
 --=== event handlers ===--
 
-loadfile(minetest.get_modpath("group_waypoints") .. "/commands.lua")(internal)
+loadfile(modpath .. "/commands.lua")(internal)
 
-loadfile(minetest.get_modpath("group_waypoints") .. "/mt_events.lua")(internal)
+loadfile(modpath .. "/mt_events.lua")(internal)
 
 --=== integrations ===--
 
-loadfile(minetest.get_modpath("group_waypoints") .. "/wp_actions.lua")(internal)
+loadfile(modpath .. "/wp_actions.lua")(internal)
 
 -- TODO on player role change: re-check all waypoints in that group for that player
 
