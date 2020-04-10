@@ -44,7 +44,7 @@ local columns = {
 	{name = "Y", sort_key = "distance", type = "text,align=right", no_sort_indicator = true},
 	{name = "Z", sort_key = "distance", type = "text,align=right", no_sort_indicator = true},
 	{name = "Distance", sort_key = "distance", type = "text,align=right"},
-	{name = "Waypoint Name", sort_key = "name", type = "text"},
+	{name = "Name", sort_key = "name", type = "text"},
 	{name = "Group", sort_key = "group", type = "text"},
 	{name = "Creator", sort_key = "creator", type = "text"},
 	{name = "Age", sort_key = "age", type = "text"},
@@ -170,30 +170,72 @@ local function build_table_cells(plname, state)
 	return table_cells
 end
 
+local function get_selected_waypoint(state)
+	if not state.row_selected or not state.waypoints_by_row then
+		return nil
+	end
+	return state.waypoints_by_row[state.row_selected]
+end
+
 function exports.show_wplist_formspec(plname)
 	local state = player_form_states[plname] or {}
 	player_form_states[plname] = state
 	state.sort_key = state.sort_key or "distance"
 
+	local selected_waypoint = get_selected_waypoint(state)
+
 	local table_cells = build_table_cells(plname, state)
 
-	-- form sizes
+	-- form and elements sizes and positioning
 	local ww = 15 -- window width
-	local tch = 3 -- top controls height
-	local th = 10 -- table height
+	local tch = 1.25
+	local th = 5 -- table height
+	local wh = 0.25 + tch + 0.25 + th + 0.25 -- window height
+	local ty = 0.25 + tch + 0.25 -- table start y coord
+
+	local wp_editor
+	-- XXX track waypoint_editor_text in state, keep user str on error
+	if selected_waypoint then
+		local waypoint_editor_text = ("%d %d %d %s"):format(
+			selected_waypoint.pos.x,
+			selected_waypoint.pos.y,
+			selected_waypoint.pos.z,
+			selected_waypoint.name
+		)
+		wp_editor = {
+			("label[0.25,0.5;Edit waypoint in group \\[%s\\] by %s]"):format(
+				minetest.formspec_escape(pmutils.get_group_name(selected_waypoint.groupid)),
+				minetest.formspec_escape(selected_waypoint.creator)
+			),
+			"field[0.25,0.75;" .. (ww - 2.5) .. ",0.5;waypoint_editor;;"
+				.. minetest.formspec_escape(waypoint_editor_text) .. "]",
+			"field_close_on_enter[waypoint_editor;false]",
+			"button[" .. (ww - 2.25) .. ",0.75;2,0.5;update_waypoint;Update]",
+		}
+		if state.waypoint_editor_error then
+			wp_editor[#wp_editor + 1] = "label[0.5,1.5;" .. minetest.formspec_escape(state.waypoint_editor_error) .. "]"
+		end
+	else
+		wp_editor = {
+			"label[0.25,1;Select a waypoint to edit it]"
+		}
+	end
+	state.waypoint_editor_error = nil
 
 	local formspec = {
 		"formspec_version[2]",
-		"size[" .. ww .. "," .. (tch + th) .. ",false]",
+		"size[" .. ww .. "," .. wh .. ",false]",
 		"real_coordinates[true]",
 		"button_exit[" .. (ww - 0.5) .. ",0;0.5,0.5;close;X]",
+		table.concat(wp_editor),
 		-- TODO filter by group, creator
 		-- TODO filter by text in name
 		-- TODO label to tell user to sort by clicking table header
+		"tableoptions[highlight=#555555]",
 		"tablecolumns[" .. table.concat(table_column_types, ";") .. "]",
-		("table[0.5,%s;%s,%s;wp_table;%s;%s]"):format(
-			tch,
-			ww - 1,
+		("table[0.25,%s;%s,%s;wp_table;%s;%s]"):format(
+			ty,
+			ww - 0.5,
 			th,
 			table.concat(table_cells, ","),
 			state.row_selected or ""
@@ -244,68 +286,107 @@ local function toggle_mark_waypoint_for_deletion(plname, state, waypoint)
 	state.waypoints_marked_for_deletion = marked
 end
 
+local function handle_waypoints_table(plname, fields, state)
+	if not fields.wp_table then
+		return -- something else changed in the form
+	end
+
+	local tf = minetest.explode_table_event(fields.wp_table)
+	if tf.type ~= "CHG" then
+		return -- other table event
+	end
+
+	local column = columns[tf.column]
+	if not column then
+		minetest.log(("Player %s sent form fields for `group_waypoints:wplist` table with invalid column nr %d"):format(plname, tf.column))
+		-- refresh, allow player to click again
+		exports.show_wplist_formspec(plname)
+		return
+	end
+
+	if tf.row == 1 then
+		handle_sort_clicked(state, column)
+		exports.show_wplist_formspec(plname)
+		state.row_selected = nil -- don't highlight table header
+	else
+		local waypoint = (state.waypoints_by_row or {})[tf.row]
+		if not waypoint then
+			minetest.log(("Player %s sent form fields for `group_waypoints:wplist` table with invalid row nr %d"):format(plname, tf.row))
+			-- refresh, allow player to click again
+			exports.show_wplist_formspec(plname)
+			return
+		end
+		state.row_selected = tf.row
+
+		local column_name = column.name
+		if column_name == "Group" then
+			-- TODO filter by group by clicking on group
+		elseif column_name == "Creator" then
+			-- TODO filter by creator by clicking on creator
+		elseif column_name == "Visible" then
+			toggle_waypoint_visibility(plname, waypoint)
+		elseif column_name == "Delete" then
+			toggle_mark_waypoint_for_deletion(plname, state, waypoint)
+		end
+
+		exports.show_wplist_formspec(plname)
+	end
+end
+
+local function handle_waypoint_editor(plname, fields, state)
+	if not fields.waypoint_editor or not (fields.update_waypoint or fields.key_enter_field == "waypoint_editor") then
+		return -- something else changed in the form
+	end
+
+	local waypoint = get_selected_waypoint(state)
+	if not waypoint then
+		minetest.log(("Player %s tried updating waypoint in `group_waypoints:wplist` while no waypoint is selected"):format(plname))
+		-- refresh to resolve inconsistent state
+		exports.show_wplist_formspec(plname)
+		return
+	end
+
+	local xs, ys, zs, name = fields.waypoint_editor:match("(-?%d+),? +(-?%d+),? +(-?%d+),? *(.*)")
+	local pos = {x=tonumber(xs), y=tonumber(ys), z=tonumber(zs)}
+	if pos.x == nil or pos.y == nil or pos.z == nil then
+		state.waypoint_editor_error = "Please specify the position at the beginning: 1 -22 345 My Waypoint Name"
+		exports.show_wplist_formspec(plname)
+		return
+	end
+
+	group_waypoints.set_waypoint_pos(plname, waypoint.id, pos)
+	group_waypoints.set_waypoint_name(plname, waypoint.id, name)
+
+	exports.show_wplist_formspec(plname)
+end
+
 minetest.register_on_player_receive_fields(
 	function(player, formname, fields)
 		if formname ~= "group_waypoints:wplist" then
-			return
+			return -- other form changed
 		end
+
 		local plname = player:get_player_name()
 		local state = player_form_states[plname]
 		if not state then
 			minetest.log(("Player %s sent form fields for `%s` without opening"):format(plname, formname))
 			return
 		end
-		if fields.close then
+
+		if fields.quit or fields.close then
 			for wpid, waypoint in pairs(state.waypoints_marked_for_deletion or {}) do
 				group_waypoints.delete_waypoint(plname, wpid)
 			end
 			player_form_states[plname] = nil
 			return
 		end
-		if fields.wp_table then
-			local tf = minetest.explode_table_event(fields.wp_table)
-			if tf.type == "CHG" then
-				local column = columns[tf.column]
-				if not column then
-					minetest.log(("Player %s sent form fields for `%s` table with invalid column nr %d"):format(plname, formname, tf.column))
-					-- refresh, allow player to click again
-					exports.show_wplist_formspec(plname)
-					return
-				end
 
-				if tf.row == 1 then
-					handle_sort_clicked(state, column)
-					exports.show_wplist_formspec(plname)
-					state.row_selected = nil -- don't highlight first row
-				else
-					local waypoint = (state.waypoints_by_row or {})[tf.row]
-					if not waypoint then
-						minetest.log(("Player %s sent form fields for `%s` table with invalid row nr %d"):format(plname, formname, tf.row))
-						-- refresh, allow player to click again
-						exports.show_wplist_formspec(plname)
-						return
-					end
-					state.row_selected = tf.row
+		handle_waypoints_table(plname, fields, state)
 
-					local column_name = column.name
-					if column_name == "Group" then
-						-- TODO filter by group by clicking on group
-					elseif column_name == "Creator" then
-						-- TODO filter by creator by clicking on creator
-					elseif column_name == "Visible" then
-						toggle_waypoint_visibility(plname, waypoint)
-					elseif column_name == "Delete" then
-						toggle_mark_waypoint_for_deletion(plname, state, waypoint)
-					end
+		handle_waypoint_editor(plname, fields, state)
 
-					exports.show_wplist_formspec(plname)
-				end
-			else
-				-- TODO handle other table event types
-			end
-			return
-		elseif fields.search_name then
-		-- TODO filter by name (free text)
+		if fields.search_name then
+			-- TODO filter by name (free text)
 		end
 	end
 )
