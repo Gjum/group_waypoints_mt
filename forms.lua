@@ -232,7 +232,22 @@ minetest.register_on_player_receive_fields(
 					if column_name == "Group" then
 						-- TODO filter by group by clicking on group
 					elseif column_name == "Creator" then
-					-- TODO filter by creator by clicking on creator
+						-- TODO filter by creator by clicking on creator
+					elseif column_name == "Visible" then
+						-- TODO make in/visible, also set group vis.
+						if group_waypoints.get_waypoint_visible_for_player(plname, waypoint.id) then
+							if group_waypoints.get_group_visible_for_player(plname, waypoint.groupid) then
+								-- is visible, make invisible
+								group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, false)
+							else
+								-- is visible but group is invisible. make group visible
+								group_waypoints.set_group_visible_for_player(plname, waypoint.groupid, true)
+							end
+						else
+							-- invisible. make waypoint and its group visible
+							group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, true)
+							group_waypoints.set_group_visible_for_player(plname, waypoint.groupid, true)
+						end
 					end
 				end
 			else
