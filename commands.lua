@@ -79,7 +79,7 @@ actions_table.new = {
 	usage = "[group] [name] - Create a waypoint in that group, at the current position, and give it a name (optional)."
 }
 actions_table.manage = {
-	aliases = {"list", "show"},
+	aliases = {"list", "show", "gui"},
 	fn = cmd_manage,
 	usage = "[group] - Open a GUI to manage all waypoints in that group, or across all groups."
 }
