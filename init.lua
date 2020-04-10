@@ -13,6 +13,7 @@ internal.pmutils = loadfile(modpath .. "/pmutils.lua")()
 internal.waypoints = loadfile(modpath .. "/waypoints.lua")(internal)
 group_waypoints.get_waypoint_by_id = internal.waypoints.get_waypoint_by_id
 group_waypoints.get_waypoints_in_group = internal.waypoints.get_waypoints_in_group
+group_waypoints.get_waypoints_for_player = internal.waypoints.get_waypoints_for_player
 group_waypoints.create_waypoint = internal.waypoints.create_waypoint
 group_waypoints.delete_waypoint = internal.waypoints.delete_waypoint
 group_waypoints.set_waypoint_name = internal.waypoints.set_waypoint_name
@@ -40,14 +41,14 @@ group_waypoints.on_player_defaults_updated = internal.settings.on_player_default
 group_waypoints.on_group_setting_updated = internal.settings.on_group_setting_updated
 group_waypoints.on_waypoint_setting_updated = internal.settings.on_waypoint_setting_updated
 
+-- internal.db = loadfile(modpath .. "/db.lua")(internal)
+-- XXX load waypoints and settings from db
+
 internal.hud = loadfile(modpath .. "/hud.lua")(internal)
 group_waypoints.allow_player_see_waypoint = internal.hud.allow_player_see_waypoint
 
---=== startup ===--
-
--- XXX load waypoints and settings from db
-
---=== event handlers ===--
+internal.forms = loadfile(modpath .. "/forms.lua")(internal)
+group_waypoints.show_wplist_formspec = internal.forms.show_wplist_formspec
 
 loadfile(modpath .. "/commands.lua")(internal)
 
