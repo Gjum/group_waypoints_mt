@@ -39,6 +39,7 @@ local hl_color = "#466432" -- bgcolor in selected row, fg color in previously se
 
 local columns = {
 	{name = "#888888", type = "color", no_sort_indicator = true},
+	{name = "Visible", sort_key = "visible", type = "text,align=center"},
 	{name = "X", sort_key = "distance", type = "text,align=right", no_sort_indicator = true},
 	{name = "Y", sort_key = "distance", type = "text,align=right", no_sort_indicator = true},
 	{name = "Z", sort_key = "distance", type = "text,align=right", no_sort_indicator = true},
@@ -60,6 +61,7 @@ end
 
 -- table key -> display name
 local sort_methods_names = {
+	visible = "Visible",
 	distance = "Distance",
 	name = "Waypoint Name",
 	group = "Group",
@@ -81,7 +83,18 @@ local function build_table_cells(plname, state)
 		local s_wp = {}
 		s_wp.waypoint = waypoint
 		s_wp.group_name = pmutils.get_group_name(waypoint.groupid)
-		-- the sort keys
+		if group_waypoints.get_waypoint_visible_for_player(plname, wpid) then
+			if group_waypoints.get_group_visible_for_player(plname, waypoint.groupid) then
+				s_wp.visible_text = "shown"
+				s_wp.visible = 1
+			else
+				s_wp.visible_text = "hidden (group)"
+				s_wp.visible = 2
+			end
+		else
+			s_wp.visible_text = "hidden"
+			s_wp.visible = 3
+		end
 		s_wp.distance = vector.distance(waypoint.pos, player_pos)
 		s_wp.name = waypoint.name:lower()
 		s_wp.group = s_wp.group_name:lower()
@@ -120,7 +133,13 @@ local function build_table_cells(plname, state)
 	-- waypoint rows
 	for _, s_wp in ipairs(sorted_waypoints) do
 		local waypoint = s_wp.waypoint
-		table_cells[#table_cells + 1] = "" -- TODO color from bulk selection
+		local text_color = ""
+		if s_wp.visible_text ~= "shown" then
+			text_color = "#aaaaaa"
+		end
+		-- TODO color from bulk selection
+		table_cells[#table_cells + 1] = text_color
+		table_cells[#table_cells + 1] = minetest.formspec_escape(s_wp.visible_text)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(waypoint.pos.x)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(waypoint.pos.y)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(waypoint.pos.z)
