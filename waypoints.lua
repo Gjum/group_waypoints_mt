@@ -188,7 +188,11 @@ function exports.set_waypoint_name(plname, wpid, name)
 		return nil
 	end
 
-	wp.name = name or utils.pos_to_str(wp.pos)
+	if name == nil or name == "" then
+		name = utils.pos_to_str(wp.pos)
+	end
+
+	wp.name = name
 	utils.emit_event(updated_handlers, wp)
 	return wp
 end
