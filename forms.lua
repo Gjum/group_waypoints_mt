@@ -47,7 +47,8 @@ local columns = {
 	{name = "Waypoint Name", sort_key = "name", type = "text"},
 	{name = "Group", sort_key = "group", type = "text"},
 	{name = "Creator", sort_key = "creator", type = "text"},
-	{name = "Age", sort_key = "age", type = "text"}
+	{name = "Age", sort_key = "age", type = "text"},
+	{name = "Delete", sort_key = "delete", type = "text"}
 }
 
 local table_column_types = {}
@@ -66,7 +67,8 @@ local sort_methods_names = {
 	name = "Waypoint Name",
 	group = "Group",
 	creator = "Creator",
-	age = "Age"
+	age = "Age",
+	delete = "Delete"
 }
 
 local function build_table_cells(plname, state)
@@ -83,6 +85,7 @@ local function build_table_cells(plname, state)
 		local s_wp = {}
 		s_wp.waypoint = waypoint
 		s_wp.group_name = pmutils.get_group_name(waypoint.groupid)
+
 		if group_waypoints.get_waypoint_visible_for_player(plname, wpid) then
 			if group_waypoints.get_group_visible_for_player(plname, waypoint.groupid) then
 				s_wp.visible_text = "shown"
@@ -95,11 +98,20 @@ local function build_table_cells(plname, state)
 			s_wp.visible_text = "hidden"
 			s_wp.visible = 3
 		end
+
 		s_wp.distance = vector.distance(waypoint.pos, player_pos)
 		s_wp.name = waypoint.name:lower()
 		s_wp.group = s_wp.group_name:lower()
 		s_wp.creator = waypoint.creator:lower()
 		s_wp.age = now - waypoint.created_at
+
+		s_wp.delete = "" -- no permission
+		if (state.waypoints_marked_for_deletion or {})[waypoint.id] then
+			s_wp.delete = "Undo"
+		elseif group_waypoints.can_player_delete_waypoint(plname, waypoint) then
+			s_wp.delete = "Delete"
+		end
+
 		sorted_waypoints[#sorted_waypoints + 1] = s_wp
 	end
 
@@ -136,7 +148,9 @@ local function build_table_cells(plname, state)
 		local waypoint = s_wp.waypoint
 		state.waypoints_by_row[row_nr + 1] = waypoint -- first row is table header
 		local text_color = ""
-		if s_wp.visible_text ~= "shown" then
+		if s_wp.delete == "Undo" then
+			text_color = "#dd2200"
+		elseif s_wp.visible_text ~= "shown" then
 			text_color = "#aaaaaa"
 		end
 		-- TODO color from bulk selection
@@ -150,6 +164,7 @@ local function build_table_cells(plname, state)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(s_wp.group_name)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(waypoint.creator)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(format_age(s_wp.age))
+		table_cells[#table_cells + 1] = minetest.formspec_escape(s_wp.delete)
 	end
 
 	return table_cells
@@ -216,6 +231,19 @@ local function toggle_waypoint_visibility(plname, waypoint)
 	end
 end
 
+local function toggle_mark_waypoint_for_deletion(plname, state, waypoint)
+	if not group_waypoints.can_player_delete_waypoint(plname, waypoint) then
+		return
+	end
+	local marked = state.waypoints_marked_for_deletion or {}
+	if marked[waypoint.id] then
+		marked[waypoint.id] = nil -- undo was clicked
+	else
+		marked[waypoint.id] = waypoint
+	end
+	state.waypoints_marked_for_deletion = marked
+end
+
 minetest.register_on_player_receive_fields(
 	function(player, formname, fields)
 		if formname ~= "group_waypoints:wplist" then
@@ -228,6 +256,9 @@ minetest.register_on_player_receive_fields(
 			return
 		end
 		if fields.close then
+			for wpid, waypoint in pairs(state.waypoints_marked_for_deletion or {}) do
+				group_waypoints.delete_waypoint(plname, wpid)
+			end
 			player_form_states[plname] = nil
 			return
 		end
@@ -263,6 +294,8 @@ minetest.register_on_player_receive_fields(
 						-- TODO filter by creator by clicking on creator
 					elseif column_name == "Visible" then
 						toggle_waypoint_visibility(plname, waypoint)
+					elseif column_name == "Delete" then
+						toggle_mark_waypoint_for_deletion(plname, state, waypoint)
 					end
 
 					exports.show_wplist_formspec(plname)
