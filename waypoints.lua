@@ -44,8 +44,10 @@ end
 local all_wps_by_id = {} -- wpid -> wp
 local all_wps_by_groupid = {} -- groupid -> wpid -> wp
 
+local largest_id = 0
 local function next_id(wp)
-	return utils.pos_to_str(wp.pos, "/") .. "/" .. wp.groupid
+	largest_id = largest_id + 1
+	return largest_id
 end
 
 -- player pos -> block pos
@@ -94,6 +96,9 @@ end
 
 function exports.load_waypoints(waypoints)
 	for _, wp_in in pairs(waypoints) do
+		if wp_in.id and largest_id < wp_in.id then
+			largest_id = wp_in.id
+		end
 		local wp = clean_wp(wp_in)
 		all_wps_by_id[wp.id] = wp
 		local group_wps = exports.get_waypoints_in_group(wp.groupid)
