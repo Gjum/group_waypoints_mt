@@ -131,8 +131,10 @@ local function build_table_cells(plname, state)
 	end
 
 	-- waypoint rows
-	for _, s_wp in ipairs(sorted_waypoints) do
+	state.waypoints_by_row = {}
+	for row_nr, s_wp in ipairs(sorted_waypoints) do
 		local waypoint = s_wp.waypoint
+		state.waypoints_by_row[row_nr + 1] = waypoint -- first row is table header
 		local text_color = ""
 		if s_wp.visible_text ~= "shown" then
 			text_color = "#aaaaaa"
@@ -196,8 +198,7 @@ minetest.register_on_player_receive_fields(
 		local plname = player:get_player_name()
 		local state = player_form_states[plname]
 		if not state then
-			-- TODO log warning about potentially abusive player action
-			-- ("Player %s sent form fields for `%s` without opening"):format(plname, formname)
+			minetest.log(("Player %s sent form fields for `%s` without opening"):format(plname, formname))
 			return
 		end
 		if fields.close then
@@ -220,6 +221,13 @@ minetest.register_on_player_receive_fields(
 					end
 					exports.show_wplist_formspec(plname)
 				else
+					local waypoint = (state.waypoints_by_row or {})[tf.row]
+					if not waypoint then
+						minetest.log(("Player %s sent form fields for `%s` table with invalid row nr %d"):format(plname, formname, tf.row))
+						-- refresh, allow player to click again
+						exports.show_wplist_formspec(plname)
+						return
+					end
 					local column_name = (columns[tf.column] or {}).name
 					if column_name == "Group" then
 						-- TODO filter by group by clicking on group
