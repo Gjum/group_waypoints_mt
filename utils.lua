@@ -1,8 +1,8 @@
 local exports = {}
 
-function exports.pos_to_str(wp, sep)
+function exports.pos_to_str(pos, sep)
 	sep = sep or " "
-	return wp.pos.x .. sep .. wp.pos.y .. sep .. wp.pos.z
+	return pos.x .. sep .. pos.y .. sep .. pos.z
 end
 
 function exports.emit_allowed_check(checks, plname, event)
