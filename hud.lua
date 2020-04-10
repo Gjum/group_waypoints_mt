@@ -128,7 +128,11 @@ function exports.update_all_waypoints_for_player(plname)
 	-- hide all waypoints that are now no longer visible
 	for wpid, hud_id in pairs(all_player_huds[plname] or {}) do
 		local waypoint = group_waypoints.get_waypoint_by_id(wpid)
-		exports.update_waypoint_for_player(plname, waypoint)
+		if waypoint then
+			exports.update_waypoint_for_player(plname, waypoint)
+		else -- waypoint was deleted
+			hide_waypoint_from_player(plname, wpid)
+		end
 	end
 	-- show all waypoints that are now visible
 	for _, group in ipairs(pmutils.get_player_groups(plname) or {}) do
@@ -154,7 +158,8 @@ group_waypoints.on_waypoint_updated(
 )
 
 group_waypoints.on_waypoint_deleted(
-	function(wpid)
+	function(waypoint)
+		local wpid = waypoint.id
 		-- this could have been implemented using hide_waypoint_from_player, but this implementation is optimized
 		local waypoint_hud_ids = all_waypoint_huds[wpid] or {}
 		for plname, hud_id in pairs(waypoint_hud_ids) do
