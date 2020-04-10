@@ -160,8 +160,6 @@ function exports.show_wplist_formspec(plname)
 	player_form_states[plname] = state
 	state.sort_key = state.sort_key or "distance"
 
-	local selection_idx = nil -- TODO args
-
 	local table_cells = build_table_cells(plname, state)
 
 	-- form sizes
@@ -183,11 +181,39 @@ function exports.show_wplist_formspec(plname)
 			ww - 1,
 			th,
 			table.concat(table_cells, ","),
-			selection_idx or ""
+			state.row_selected or ""
 		)
 	}
 	formspec = table.concat(formspec)
 	minetest.show_formspec(plname, "group_waypoints:wplist", formspec)
+end
+
+local function handle_sort_clicked(state, column)
+	local prev_sort = state.sort_key
+	state.sort_key = column.sort_key
+	if prev_sort ~= state.sort_key then
+		-- changing sort column uses ascending sort
+		state.sort_descending = false
+	else
+		-- clicking sorted column reverses the sort order
+		state.sort_descending = not state.sort_descending
+	end
+end
+
+local function toggle_waypoint_visibility(plname, waypoint)
+	if group_waypoints.get_waypoint_visible_for_player(plname, waypoint.id) then
+		if group_waypoints.get_group_visible_for_player(plname, waypoint.groupid) then
+			-- is visible, make invisible
+			group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, false)
+		else
+			-- is visible but group is invisible. make group visible
+			group_waypoints.set_group_visible_for_player(plname, waypoint.groupid, true)
+		end
+	else
+		-- invisible. make waypoint and its group visible
+		group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, true)
+		group_waypoints.set_group_visible_for_player(plname, waypoint.groupid, true)
+	end
 end
 
 minetest.register_on_player_receive_fields(
@@ -208,18 +234,18 @@ minetest.register_on_player_receive_fields(
 		if fields.wp_table then
 			local tf = minetest.explode_table_event(fields.wp_table)
 			if tf.type == "CHG" then
-				state.row_selected = tf.row
-				if tf.row == 1 then
-					local prev_sort = state.sort_key
-					state.sort_key = (columns[tf.column] or {}).sort_key
-					if prev_sort ~= state.sort_key then
-						-- changing sort column uses ascending sort
-						state.sort_descending = false
-					else
-						-- clicking sorted column reverses the sort order
-						state.sort_descending = not state.sort_descending
-					end
+				local column = columns[tf.column]
+				if not column then
+					minetest.log(("Player %s sent form fields for `%s` table with invalid column nr %d"):format(plname, formname, tf.column))
+					-- refresh, allow player to click again
 					exports.show_wplist_formspec(plname)
+					return
+				end
+
+				if tf.row == 1 then
+					handle_sort_clicked(state, column)
+					exports.show_wplist_formspec(plname)
+					state.row_selected = nil -- don't highlight first row
 				else
 					local waypoint = (state.waypoints_by_row or {})[tf.row]
 					if not waypoint then
@@ -228,27 +254,18 @@ minetest.register_on_player_receive_fields(
 						exports.show_wplist_formspec(plname)
 						return
 					end
-					local column_name = (columns[tf.column] or {}).name
+					state.row_selected = tf.row
+
+					local column_name = column.name
 					if column_name == "Group" then
 						-- TODO filter by group by clicking on group
 					elseif column_name == "Creator" then
 						-- TODO filter by creator by clicking on creator
 					elseif column_name == "Visible" then
-						-- TODO make in/visible, also set group vis.
-						if group_waypoints.get_waypoint_visible_for_player(plname, waypoint.id) then
-							if group_waypoints.get_group_visible_for_player(plname, waypoint.groupid) then
-								-- is visible, make invisible
-								group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, false)
-							else
-								-- is visible but group is invisible. make group visible
-								group_waypoints.set_group_visible_for_player(plname, waypoint.groupid, true)
-							end
-						else
-							-- invisible. make waypoint and its group visible
-							group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, true)
-							group_waypoints.set_group_visible_for_player(plname, waypoint.groupid, true)
-						end
+						toggle_waypoint_visibility(plname, waypoint)
 					end
+
+					exports.show_wplist_formspec(plname)
 				end
 			else
 				-- TODO handle other table event types
