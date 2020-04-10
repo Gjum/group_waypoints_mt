@@ -71,6 +71,7 @@ end
 local function cmd_manage(plname, param)
 	-- TODO pre-select group filter
 	group_waypoints.show_wplist_formspec(plname)
+	return "Opening waypoint management form..."
 end
 
 actions_table.new = {
