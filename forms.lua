@@ -194,9 +194,8 @@ function exports.show_wplist_formspec(plname)
 	local ty = 0.25 + tch + 0.25 -- table start y coord
 
 	local wp_editor
-	-- XXX track waypoint_editor_text in state, keep user str on error
 	if selected_waypoint then
-		local waypoint_editor_text = ("%d %d %d %s"):format(
+		state.waypoint_editor_text = state.waypoint_editor_text or ("%d %d %d %s"):format(
 			selected_waypoint.pos.x,
 			selected_waypoint.pos.y,
 			selected_waypoint.pos.z,
@@ -208,7 +207,7 @@ function exports.show_wplist_formspec(plname)
 				minetest.formspec_escape(selected_waypoint.creator)
 			),
 			"field[0.25,0.75;" .. (ww - 2.5) .. ",0.5;waypoint_editor;;"
-				.. minetest.formspec_escape(waypoint_editor_text) .. "]",
+				.. minetest.formspec_escape(state.waypoint_editor_text) .. "]",
 			"field_close_on_enter[waypoint_editor;false]",
 			"button[" .. (ww - 2.25) .. ",0.75;2,0.5;update_waypoint;Update]",
 		}
@@ -304,6 +303,10 @@ local function handle_waypoints_table(plname, fields, state)
 		return
 	end
 
+	if state.row_selected ~= tf.row then -- changing selection
+		state.waypoint_editor_text = nil -- override any user-entered text
+	end
+
 	if tf.row == 1 then
 		handle_sort_clicked(state, column)
 		exports.show_wplist_formspec(plname)
@@ -334,8 +337,14 @@ local function handle_waypoints_table(plname, fields, state)
 end
 
 local function handle_waypoint_editor(plname, fields, state)
-	if not fields.waypoint_editor or not (fields.update_waypoint or fields.key_enter_field == "waypoint_editor") then
+	if not fields.waypoint_editor then
 		return -- something else changed in the form
+	end
+
+	state.waypoint_editor_text = fields.waypoint_editor
+
+	if not fields.update_waypoint and not fields.key_enter_field == "waypoint_editor" then
+		return -- the editor contains text but the waypoint should not be updated yet
 	end
 
 	local waypoint = get_selected_waypoint(state)
