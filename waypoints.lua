@@ -45,13 +45,11 @@ end
 local all_wps_by_id = {} -- wpid -> wp
 local all_wps_by_groupid = {} -- groupid -> wpid -> wp
 
-local largest_id = 0
 local function next_id(wp)
-	largest_id = largest_id + 1
-	return largest_id
+	return pm.generate_id()
 end
 
--- player pos -> block pos
+-- player pos -> node pos
 local function pos_adjusted(pos)
 	return {
 		x = math.floor(pos.x + 0.5),
@@ -63,6 +61,11 @@ end
 local function clean_wp(wp_in)
 	-- TODO ensure wp_in.groupid exists
 
+	assert(wp_in.id, "Illegal waypoint id (nil): " .. dump2(wp_in))
+	assert(type(wp_in.id) == "string", "Illegal waypoint id (no string): " .. dump2(wp_in))
+	assert(string.len(wp_in.id) > 0, "Illegal waypoint id (empty): " .. dump2(wp_in))
+	assert(string.len(wp_in.id) <= 16, "Illegal waypoint id (too long): " .. dump2(wp_in))
+
 	local wp = {
 		id = wp_in.id,
 		groupid = wp_in.groupid,
@@ -72,8 +75,6 @@ local function clean_wp(wp_in)
 		pos = pos_adjusted(wp_in.pos),
 		color = wp_in.color -- may be nil, in that case the player's group color is used
 	}
-
-	wp.id = wp.id or next_id(wp)
 
 	if not wp.name or wp.name == "" then
 		wp.name = utils.pos_to_str(wp.pos)
@@ -108,9 +109,6 @@ end
 
 function exports.load_waypoints(waypoints)
 	for _, wp_in in pairs(waypoints) do
-		if wp_in.id and largest_id < wp_in.id then
-			largest_id = wp_in.id
-		end
 		local wp = clean_wp(wp_in)
 		all_wps_by_id[wp.id] = wp
 		local group_wps = exports.get_waypoints_in_group(wp.groupid)
