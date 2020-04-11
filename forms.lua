@@ -35,10 +35,9 @@ local function format_age(age)
 	end
 end
 
-local hl_color = "#466432" -- bgcolor in selected row, fg color in previously selected rows
-
 local columns = {
 	{name = "#888888", type = "color", no_sort_indicator = true},
+	{name = "Select", sort_key = "selected", type = "text,align=center"},
 	{name = "Visible", sort_key = "visible", type = "text,align=center"},
 	{name = "X", sort_key = "distance", type = "text,align=right", no_sort_indicator = true},
 	{name = "Y", sort_key = "distance", type = "text,align=right", no_sort_indicator = true},
@@ -47,8 +46,7 @@ local columns = {
 	{name = "Name", sort_key = "name", type = "text"},
 	{name = "Group", sort_key = "group", type = "text"},
 	{name = "Creator", sort_key = "creator", type = "text"},
-	{name = "Age", sort_key = "age", type = "text"},
-	{name = "Delete", sort_key = "delete", type = "text"}
+	{name = "Age", sort_key = "age", type = "text"}
 }
 
 local table_column_types = {}
@@ -62,14 +60,34 @@ end
 
 -- table key -> display name
 local sort_methods_names = {
+	selected = "Selected",
 	visible = "Visible",
 	distance = "Distance",
-	name = "Waypoint Name",
+	name = "Name",
 	group = "Group",
 	creator = "Creator",
-	age = "Age",
-	delete = "Delete"
+	age = "Age"
 }
+
+local function get_selected_waypoint(state)
+	if not state.row_selected or not state.waypoints_by_row then
+		return nil
+	end
+	return state.waypoints_by_row[state.row_selected]
+end
+
+--- state.selected_waypoints plus state.row_selected
+local function get_all_selected_waypoints(state)
+	local all = {}
+	for wpid, waypoint in pairs(state.selected_waypoints or {}) do
+		all[wpid] = waypoint
+	end
+	local selected_waypoint = get_selected_waypoint(state)
+	if selected_waypoint then
+		all[selected_waypoint.id] = selected_waypoint
+	end
+	return all
+end
 
 local function build_table_cells(plname, state)
 	assert(sort_methods_names[state.sort_key], "Unknown sort method: " .. dump2(state.sort_key))
@@ -85,6 +103,11 @@ local function build_table_cells(plname, state)
 		local s_wp = {}
 		s_wp.waypoint = waypoint
 		s_wp.group_name = pmutils.get_group_name(waypoint.groupid)
+
+		s_wp.selected = ""
+		if get_all_selected_waypoints(state)[waypoint.id] then
+			s_wp.selected = "o"
+		end
 
 		if group_waypoints.get_waypoint_visible_for_player(plname, wpid) then
 			if group_waypoints.get_group_visible_for_player(plname, waypoint.groupid) then
@@ -104,13 +127,6 @@ local function build_table_cells(plname, state)
 		s_wp.group = s_wp.group_name:lower()
 		s_wp.creator = waypoint.creator:lower()
 		s_wp.age = now - waypoint.created_at
-
-		s_wp.delete = "" -- no permission
-		if (state.waypoints_marked_for_deletion or {})[waypoint.id] then
-			s_wp.delete = "Undo"
-		elseif group_waypoints.can_player_delete_waypoint(plname, waypoint) then
-			s_wp.delete = "Delete"
-		end
 
 		sorted_waypoints[#sorted_waypoints + 1] = s_wp
 	end
@@ -148,13 +164,13 @@ local function build_table_cells(plname, state)
 		local waypoint = s_wp.waypoint
 		state.waypoints_by_row[row_nr + 1] = waypoint -- first row is table header
 		local text_color = ""
-		if s_wp.delete == "Undo" then
-			text_color = "#dd2200"
+		if s_wp.selected == "o" then
+			text_color = "#ace673"
 		elseif s_wp.visible_text ~= "shown" then
 			text_color = "#aaaaaa"
 		end
-		-- TODO color from bulk selection
 		table_cells[#table_cells + 1] = text_color
+		table_cells[#table_cells + 1] = minetest.formspec_escape(s_wp.selected)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(s_wp.visible_text)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(waypoint.pos.x)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(waypoint.pos.y)
@@ -164,17 +180,9 @@ local function build_table_cells(plname, state)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(s_wp.group_name)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(waypoint.creator)
 		table_cells[#table_cells + 1] = minetest.formspec_escape(format_age(s_wp.age))
-		table_cells[#table_cells + 1] = minetest.formspec_escape(s_wp.delete)
 	end
 
 	return table_cells
-end
-
-local function get_selected_waypoint(state)
-	if not state.row_selected or not state.waypoints_by_row then
-		return nil
-	end
-	return state.waypoints_by_row[state.row_selected]
 end
 
 function exports.show_wplist_formspec(plname)
@@ -190,8 +198,9 @@ function exports.show_wplist_formspec(plname)
 	local ww = 15 -- window width
 	local tch = 1.25
 	local th = 5 -- table height
-	local wh = 0.25 + tch + 0.25 + th + 0.25 -- window height
 	local ty = 0.25 + tch + 0.25 -- table start y coord
+	local btny = ty + th + 0.25 -- buttons start y coord
+	local wh = btny + 0.5 + 0.25 -- window height
 
 	local wp_editor
 	if selected_waypoint then
@@ -216,10 +225,25 @@ function exports.show_wplist_formspec(plname)
 		end
 	else
 		wp_editor = {
-			"label[0.25,1;Select a waypoint to edit it]"
+			"label[1,1;Select a waypoint to edit it]"
 		}
 	end
-	state.waypoint_editor_error = nil
+
+	local num_selected_showable = 0
+	local num_selected_hideable = 0
+	local num_selected_deletable = 0
+	for wpid, waypoint in pairs(get_all_selected_waypoints(state) or {}) do
+		local is_visible = group_waypoints.get_waypoint_visible_for_player(plname, waypoint.id)
+			and group_waypoints.get_group_visible_for_player(plname, waypoint.groupid)
+		if is_visible then
+			num_selected_hideable = num_selected_hideable + 1
+		else
+			num_selected_showable = num_selected_showable + 1
+		end
+		if group_waypoints.can_player_delete_waypoint(plname, waypoint) then
+			num_selected_deletable = num_selected_deletable + 1
+		end
+	end
 
 	local formspec = {
 		"formspec_version[2]",
@@ -230,7 +254,7 @@ function exports.show_wplist_formspec(plname)
 		-- TODO filter by group, creator
 		-- TODO filter by text in name
 		-- TODO label to tell user to sort by clicking table header
-		"tableoptions[highlight=#555555]",
+		"tableoptions[highlight=#466432]",
 		"tablecolumns[" .. table.concat(table_column_types, ";") .. "]",
 		("table[0.25,%s;%s,%s;wp_table;%s;%s]"):format(
 			ty,
@@ -238,7 +262,11 @@ function exports.show_wplist_formspec(plname)
 			th,
 			table.concat(table_cells, ","),
 			state.row_selected or ""
-		)
+		),
+		("button[0.25,%f;2.5,0.5;btn_show_selected;Show %d selected]"):format(btny, num_selected_showable),
+		("button[3,%f;2.5,0.5;btn_hide_selected;Hide %d selected]"):format(btny, num_selected_hideable),
+		("button[5.75,%f;2.5,0.5;btn_delete_selected;Delete %d selected]"):format(btny, num_selected_deletable),
+		("button_exit[%f,%f;2.5,0.5;close;Close]"):format(ww - 2.75, btny),
 	}
 	formspec = table.concat(formspec)
 	minetest.show_formspec(plname, "group_waypoints:wplist", formspec)
@@ -272,17 +300,14 @@ local function toggle_waypoint_visibility(plname, waypoint)
 	end
 end
 
-local function toggle_mark_waypoint_for_deletion(plname, state, waypoint)
-	if not group_waypoints.can_player_delete_waypoint(plname, waypoint) then
-		return
-	end
-	local marked = state.waypoints_marked_for_deletion or {}
-	if marked[waypoint.id] then
-		marked[waypoint.id] = nil -- undo was clicked
+local function toggle_waypoint_selected(plname, state, waypoint)
+	local selected = state.selected_waypoints or {}
+	if selected[waypoint.id] then
+		selected[waypoint.id] = nil
 	else
-		marked[waypoint.id] = waypoint
+		selected[waypoint.id] = waypoint
 	end
-	state.waypoints_marked_for_deletion = marked
+	state.selected_waypoints = selected
 end
 
 local function handle_waypoints_table(plname, fields, state)
@@ -296,21 +321,17 @@ local function handle_waypoints_table(plname, fields, state)
 	end
 
 	local column = columns[tf.column]
-	if not column then
-		minetest.log(("Player %s sent form fields for `group_waypoints:wplist` table with invalid column nr %d"):format(plname, tf.column))
-		-- refresh, allow player to click again
-		exports.show_wplist_formspec(plname)
-		return
-	end
 
 	if state.row_selected ~= tf.row then -- changing selection
 		state.waypoint_editor_text = nil -- override any user-entered text
 	end
 
 	if tf.row == 1 then
-		handle_sort_clicked(state, column)
-		exports.show_wplist_formspec(plname)
-		state.row_selected = nil -- don't highlight table header
+		if column then
+			handle_sort_clicked(state, column)
+			exports.show_wplist_formspec(plname)
+			state.row_selected = nil -- don't highlight table header
+		end
 	else
 		local waypoint = (state.waypoints_by_row or {})[tf.row]
 		if not waypoint then
@@ -321,15 +342,11 @@ local function handle_waypoints_table(plname, fields, state)
 		end
 		state.row_selected = tf.row
 
-		local column_name = column.name
-		if column_name == "Group" then
-			-- TODO filter by group by clicking on group
-		elseif column_name == "Creator" then
-			-- TODO filter by creator by clicking on creator
-		elseif column_name == "Visible" then
+		local column_name = (column or {}).name
+		if column_name == "Visible" then
 			toggle_waypoint_visibility(plname, waypoint)
-		elseif column_name == "Delete" then
-			toggle_mark_waypoint_for_deletion(plname, state, waypoint)
+		elseif column_name == "Select" then
+			toggle_waypoint_selected(plname, state, waypoint)
 		end
 
 		exports.show_wplist_formspec(plname)
@@ -343,9 +360,7 @@ local function handle_waypoint_editor(plname, fields, state)
 
 	state.waypoint_editor_text = fields.waypoint_editor
 
-	if not fields.update_waypoint and not fields.key_enter_field == "waypoint_editor" then
-		return -- the editor contains text but the waypoint should not be updated yet
-	end
+	state.waypoint_editor_error = nil
 
 	local waypoint = get_selected_waypoint(state)
 	if not waypoint then
@@ -363,10 +378,39 @@ local function handle_waypoint_editor(plname, fields, state)
 		return
 	end
 
+	if not fields.update_waypoint and fields.key_enter_field ~= "waypoint_editor" then
+		return -- the editor contains text but the waypoint should not be updated yet
+	end
+
 	group_waypoints.set_waypoint_pos(plname, waypoint.id, pos)
 	group_waypoints.set_waypoint_name(plname, waypoint.id, name)
 
 	exports.show_wplist_formspec(plname)
+end
+
+local function handle_buttons(plname, fields, state)
+	if fields.btn_show_selected then
+		local visible_groups = {}
+		for wpid, waypoint in pairs(get_all_selected_waypoints(state)) do
+			group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, true)
+			visible_groups[waypoint.groupid] = true
+		end
+		for groupid, _ in pairs(visible_groups) do
+			group_waypoints.set_group_visible_for_player(plname, groupid, true)
+		end
+		exports.show_wplist_formspec(plname)
+	elseif fields.btn_hide_selected then
+		-- TODO consider: if hiding all in a group, just hide group instead of each waypoint individually
+		for wpid, waypoint in pairs(get_all_selected_waypoints(state)) do
+			group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, false)
+		end
+		exports.show_wplist_formspec(plname)
+	elseif fields.btn_delete_selected then
+		for wpid, waypoint in pairs(get_all_selected_waypoints(state)) do
+			group_waypoints.delete_waypoint(plname, wpid)
+		end
+		exports.show_wplist_formspec(plname)
+	end
 end
 
 minetest.register_on_player_receive_fields(
@@ -383,12 +427,11 @@ minetest.register_on_player_receive_fields(
 		end
 
 		if fields.quit or fields.close then
-			for wpid, waypoint in pairs(state.waypoints_marked_for_deletion or {}) do
-				group_waypoints.delete_waypoint(plname, wpid)
-			end
 			player_form_states[plname] = nil
 			return
 		end
+
+		handle_buttons(plname, fields, state)
 
 		handle_waypoints_table(plname, fields, state)
 
