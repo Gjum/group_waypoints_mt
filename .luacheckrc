@@ -10,6 +10,7 @@ read_globals = {
 	table = {fields = {"copy", "getn"}},
 	-- civtest
 	"pm",
+	"pmutils",
 	-- Builtin
 	"DIR_DELIM",
 	"dump",
@@ -22,5 +23,6 @@ read_globals = {
 	"default",
 	"sfinv",
 	-- minetest
+	"dump2",
 	"minetest"
 }

@@ -24,8 +24,9 @@ local function prep_db()
 	env = assert (driver.postgres())
 	db = assert (env:connect(sourcename, username, password))
 
-	-- use BIGINT instead of TIMESTAMP WITH TIME ZONE because I cannot find documentation on how luasql handles the timestamp format
-	local res = assert(u.prepare(db, [[
+	-- use BIGINT instead of TIMESTAMP WITH TIME ZONE because I cannot
+	-- find documentation on how luasql handles the timestamp format
+	assert(u.prepare(db, [[
 		CREATE TABLE IF NOT EXISTS waypoints (
 			id VARCHAR(16) NOT NULL,
 			groupid VARCHAR(16) NOT NULL,
@@ -38,7 +39,7 @@ local function prep_db()
 			PRIMARY KEY (id)
 		)]]))
 
-	res = assert(u.prepare(db, [[
+	assert(u.prepare(db, [[
 		CREATE TABLE IF NOT EXISTS waypoint_player_overrides (
 			waypoint_id VARCHAR(16) REFERENCES waypoints(id),
 			player_name VARCHAR(32) NOT NULL,

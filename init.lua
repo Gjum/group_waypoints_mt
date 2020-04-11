@@ -48,9 +48,12 @@ internal.insecure_env = minetest.request_insecure_environment() or
 		"Add it to `secure.trusted_mods` in minetest.conf")
 
 internal.db = loadfile(modpath .. "/db.lua")(internal)
-local num_loaded_waypoints = internal.waypoints.load_waypoints(internal.db.load_all_waypoints())
+local num_loaded_waypoints = internal.waypoints.load_waypoints(
+	internal.db.load_all_waypoints())
 minetest.log("[group_waypoints] Loaded " .. num_loaded_waypoints .. " waypoints from Postgres")
-local num_loaded_wp_overrides = internal.settings.load_waypoint_overrides(internal.db.load_all_waypoint_player_overrides())
+
+local num_loaded_wp_overrides = internal.settings.load_waypoint_overrides(
+	internal.db.load_all_waypoint_player_overrides())
 minetest.log("[group_waypoints] Loaded " .. num_loaded_wp_overrides .. " waypoint player overrides from Postgres")
 
 internal.hud = loadfile(modpath .. "/hud.lua")(internal)

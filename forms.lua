@@ -339,7 +339,8 @@ local function handle_waypoints_table(plname, fields, state)
 	else
 		local waypoint = (state.waypoints_by_row or {})[tf.row]
 		if not waypoint then
-			minetest.log(("Player %s sent form fields for `group_waypoints:wplist` table with invalid row nr %d"):format(plname, tf.row))
+			minetest.log(("Player %s sent form fields for `group_waypoints:wplist` table"
+				.. " with invalid row nr %d"):format(plname, tf.row))
 			-- refresh, allow player to click again
 			exports.show_wplist_formspec(plname)
 			return
@@ -368,7 +369,8 @@ local function handle_waypoint_editor(plname, fields, state)
 
 	local waypoint = get_selected_waypoint(state)
 	if not waypoint then
-		minetest.log(("Player %s tried updating waypoint in `group_waypoints:wplist` while no waypoint is selected"):format(plname))
+		minetest.log(("Player %s tried updating waypoint in `group_waypoints:wplist`"
+			.. " while no waypoint is selected"):format(plname))
 		-- refresh to resolve inconsistent state
 		exports.show_wplist_formspec(plname)
 		return
@@ -440,10 +442,6 @@ minetest.register_on_player_receive_fields(
 		handle_waypoints_table(plname, fields, state)
 
 		handle_waypoint_editor(plname, fields, state)
-
-		if fields.search_name then
-			-- TODO filter by name (free text)
-		end
 	end
 )
 
