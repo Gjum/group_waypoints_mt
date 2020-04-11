@@ -79,12 +79,16 @@ end
 --- state.selected_waypoints plus state.row_selected
 local function get_all_selected_waypoints(state)
 	local all = {}
+	local empty = true
 	for wpid, waypoint in pairs(state.selected_waypoints or {}) do
 		all[wpid] = waypoint
+		empty = false
 	end
-	local selected_waypoint = get_selected_waypoint(state)
-	if selected_waypoint then
-		all[selected_waypoint.id] = selected_waypoint
+	if empty then
+		local selected_waypoint = get_selected_waypoint(state)
+		if selected_waypoint then
+			all[selected_waypoint.id] = selected_waypoint
+		end
 	end
 	return all
 end
@@ -105,7 +109,7 @@ local function build_table_cells(plname, state)
 		s_wp.group_name = pmutils.get_group_name(waypoint.groupid)
 
 		s_wp.selected = ""
-		if get_all_selected_waypoints(state)[waypoint.id] then
+		if (state.selected_waypoints or {})[waypoint.id] then
 			s_wp.selected = "o"
 		end
 
