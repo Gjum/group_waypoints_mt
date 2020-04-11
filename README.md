@@ -2,6 +2,8 @@
 
 Create and share waypoints in PlayerManager groups.
 
+![Screenshot](screenshot.png)
+
 ## Functionality
 
 - playermanager groups contain waypoints
