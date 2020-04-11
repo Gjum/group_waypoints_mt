@@ -1,7 +1,7 @@
 -- This module updates the player HUD to display the visible waypoints.
 
 local utils = (...).utils
-local pmutils = (...).pmutils
+local pm_shim = (...).pm_shim
 
 local exports = {}
 
@@ -19,7 +19,7 @@ local all_waypoint_huds = {} -- wpid -> plname -> hud_id
 
 local function show_waypoint_to_player(plname, waypoint)
 	local player = minetest.get_player_by_name(plname)
-	local group_name = pmutils.get_group_name(waypoint.groupid)
+	local group_name = pm_shim.get_group_name(waypoint.groupid)
 	local color = waypoint.color
 		or group_waypoints.get_group_color_for_player(plname, waypoint.groupid)
 		or 0xDDFFDD
@@ -120,7 +120,7 @@ function exports.update_waypoint(waypoint)
 	end
 
 	-- show to all players that may see it
-	for _, pm_player in ipairs(pmutils.get_group_members(waypoint.groupid) or {}) do
+	for _, pm_player in ipairs(pm_shim.get_group_members(waypoint.groupid) or {}) do
 		exports.update_waypoint_for_player(pm_player.name, waypoint)
 	end
 end
@@ -137,7 +137,7 @@ function exports.update_all_waypoints_for_player(plname)
 		end
 	end
 	-- show all waypoints that are now visible
-	for _, group in ipairs(pmutils.get_player_groups(plname) or {}) do
+	for _, group in ipairs(pm_shim.get_player_groups(plname) or {}) do
 		local group_wps = group_waypoints.get_waypoints_in_group(group.id) or {}
 		for wpid, waypoint in pairs(group_wps) do
 			exports.update_waypoint_for_player(plname, waypoint)

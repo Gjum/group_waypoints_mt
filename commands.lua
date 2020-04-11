@@ -2,7 +2,7 @@
 -- so it can be used as default for wpadd
 
 local utils = (...).utils
-local pmutils = (...).pmutils
+local pm_shim = (...).pm_shim
 
 local actions_table = {}
 local actions_aliases = {}
@@ -35,7 +35,7 @@ local function cmd_create(plname, param_group, ...)
 	local param_name = table.concat({...}, " ")
 	local groupid = nil
 	if param_group then
-		groupid = pmutils.get_group_id_by_name(param_group)
+		groupid = pm_shim.get_group_id_by_name(param_group)
 	end
 	if not groupid then
 		groupid = (group_waypoints.get_defaults_for_player(plname) or {}).groupid
@@ -44,7 +44,7 @@ local function cmd_create(plname, param_group, ...)
 		return nil, "Cannot create waypoint: No group specified, and no default group found. Usage: /wp new [group] [name]"
 	end
 
-	local group_name = pmutils.get_group_name(groupid)
+	local group_name = pm_shim.get_group_name(groupid)
 	if not group_name then
 		error("Group id " .. groupid .. " not found")
 	end

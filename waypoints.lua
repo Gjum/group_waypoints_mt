@@ -4,7 +4,7 @@
 -- They throw an error, so the caller needs to check access before calling.
 
 local utils = (...).utils
-local pmutils = (...).pmutils
+local pm_shim = (...).pm_shim
 
 local exports = {}
 
@@ -98,7 +98,7 @@ end
 
 function exports.get_waypoints_for_player(plname)
 	local player_waypoints = {}
-	for _, group in ipairs(pmutils.get_player_groups(plname) or {}) do
+	for _, group in ipairs(pm_shim.get_player_groups(plname) or {}) do
 		local group_wps = group_waypoints.get_waypoints_in_group(group.id) or {}
 		for wpid, waypoint in pairs(group_wps) do
 			player_waypoints[wpid] = waypoint

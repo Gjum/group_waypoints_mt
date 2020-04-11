@@ -1,6 +1,6 @@
 -- Registers event listeners to minetest.
 
-local pmutils = (...).pmutils
+local pm_shim = (...).pm_shim
 local hud = (...).hud
 
 minetest.register_on_joinplayer(
@@ -14,7 +14,7 @@ minetest.register_on_dieplayer(
 	function(player, reason)
 		local plname = player:get_player_name()
 		local defaults = group_waypoints.get_defaults_for_player(plname) or {}
-		local groupid = defaults.death_groupid or pmutils.get_any_group_for_player(plname)
+		local groupid = defaults.death_groupid or pm_shim.get_any_group_for_player(plname)
 		if not groupid then
 			print("Cannot create death waypoint: Player " .. plname .. " has not configured a default group.")
 			return

@@ -1,7 +1,6 @@
 -- This module handles loading/storing all mod state from/to Postgres.
 
 local insecure_env = (...).insecure_env
-local u = pmutils
 
 local exports = {}
 
@@ -26,7 +25,7 @@ local function prep_db()
 
 	-- use BIGINT instead of TIMESTAMP WITH TIME ZONE because I cannot
 	-- find documentation on how luasql handles the timestamp format
-	assert(u.prepare(db, [[
+	assert(pmutils.prepare(db, [[
 		CREATE TABLE IF NOT EXISTS waypoints (
 			id VARCHAR(16) NOT NULL,
 			groupid VARCHAR(16) NOT NULL,
@@ -39,7 +38,7 @@ local function prep_db()
 			PRIMARY KEY (id)
 		)]]))
 
-	assert(u.prepare(db, [[
+	assert(pmutils.prepare(db, [[
 		CREATE TABLE IF NOT EXISTS waypoint_player_overrides (
 			waypoint_id VARCHAR(16) REFERENCES waypoints(id),
 			player_name VARCHAR(32) NOT NULL,
@@ -62,7 +61,7 @@ local QUERY_GET_ALL_WAYPOINTS = [[
 ]]
 
 function exports.load_all_waypoints()
-	local cur = u.prepare(db, QUERY_GET_ALL_WAYPOINTS)
+	local cur = pmutils.prepare(db, QUERY_GET_ALL_WAYPOINTS)
 	local waypoints = {}
 	local row = cur:fetch({}, "a")
 	while row do
@@ -93,7 +92,7 @@ local QUERY_INSERT_WAYPOINT = [[
 ]]
 
 function exports.store_waypoint(waypoint)
-	return assert(u.prepare(db, QUERY_INSERT_WAYPOINT,
+	return assert(pmutils.prepare(db, QUERY_INSERT_WAYPOINT,
 		waypoint.id,
 		waypoint.groupid,
 		waypoint.creator,
@@ -115,8 +114,8 @@ local QUERY_DELETE_WAYPOINT_OVERRIDES = [[
 ]]
 
 function exports.delete_waypoint(wpid)
-	assert(u.prepare(db, QUERY_DELETE_WAYPOINT_OVERRIDES, wpid))
-	assert(u.prepare(db, QUERY_DELETE_WAYPOINT, wpid))
+	assert(pmutils.prepare(db, QUERY_DELETE_WAYPOINT_OVERRIDES, wpid))
+	assert(pmutils.prepare(db, QUERY_DELETE_WAYPOINT, wpid))
 end
 
 --=== waypoint_player_overrides ===--
@@ -126,7 +125,7 @@ local QUERY_GET_ALL_WAYPOINT_PLAYER_OVERRIDES = [[
 ]]
 
 function exports.load_all_waypoint_player_overrides()
-	local cur = u.prepare(db, QUERY_GET_ALL_WAYPOINT_PLAYER_OVERRIDES)
+	local cur = pmutils.prepare(db, QUERY_GET_ALL_WAYPOINT_PLAYER_OVERRIDES)
 	local overrides = {}
 	local row = cur:fetch({}, "a")
 	while row do
@@ -148,7 +147,7 @@ local QUERY_INSERT_WAYPOINT_PLAYER_OVERRIDE = [[
 ]]
 
 function exports.store_waypoint_player_override(waypoint_id, player_name, override)
-	return assert(u.prepare(db, QUERY_INSERT_WAYPOINT_PLAYER_OVERRIDE,
+	return assert(pmutils.prepare(db, QUERY_INSERT_WAYPOINT_PLAYER_OVERRIDE,
 		waypoint_id, player_name, override.visible))
 end
 

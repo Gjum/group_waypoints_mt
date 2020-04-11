@@ -1,6 +1,6 @@
 -- This module displays forms and handles fields sent by the client.
 
-local pmutils = (...).pmutils
+local pm_shim = (...).pm_shim
 
 local exports = {}
 
@@ -106,7 +106,7 @@ local function build_table_cells(plname, state)
 	for wpid, waypoint in pairs(waypoints) do
 		local s_wp = {}
 		s_wp.waypoint = waypoint
-		s_wp.group_name = pmutils.get_group_name(waypoint.groupid)
+		s_wp.group_name = pm_shim.get_group_name(waypoint.groupid)
 
 		s_wp.selected = ""
 		if (state.selected_waypoints or {})[waypoint.id] then
@@ -216,7 +216,7 @@ function exports.show_wplist_formspec(plname)
 		)
 		wp_editor = {
 			("label[0.25,0.5;Edit waypoint in group \\[%s\\] by %s]"):format(
-				minetest.formspec_escape(pmutils.get_group_name(selected_waypoint.groupid)),
+				minetest.formspec_escape(pm_shim.get_group_name(selected_waypoint.groupid)),
 				minetest.formspec_escape(selected_waypoint.creator)
 			),
 			"field[0.25,0.75;" .. (ww - 2.5) .. ",0.5;waypoint_editor;;"
