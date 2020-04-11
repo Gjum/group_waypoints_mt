@@ -107,13 +107,17 @@ function exports.get_waypoints_for_player(plname)
 	return player_waypoints
 end
 
+--- waypoints: list of waypoint tables
 function exports.load_waypoints(waypoints)
+	local num_loaded = 0
 	for _, wp_in in pairs(waypoints) do
 		local wp = clean_wp(wp_in)
 		all_wps_by_id[wp.id] = wp
 		local group_wps = exports.get_waypoints_in_group(wp.groupid)
 		group_wps[wp.id] = wp
+		num_loaded = num_loaded + 1
 	end
+	return num_loaded
 end
 
 --=== creation ===--

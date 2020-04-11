@@ -34,19 +34,34 @@ local all_wp_player_overrides = {} -- wpid -> plname -> {visible}
 local all_player_defaults = {} -- plname -> {groupid}
 
 function exports.load_group_overrides(group_overrides)
-	for _, wp_in in pairs(group_overrides) do
+	local num_loaded = 0
+	for _, group_override in pairs(group_overrides) do
 		-- XXX load_group_overrides
+		-- num_loaded = num_loaded + 1
 	end
+	return num_loaded
 end
 
-function exports.load_waypoint_overrides(group_overrides)
-	for _, wp_in in pairs(group_overrides) do
-		-- XXX load_waypoint_overrides
+--- waypoint_overrides: list of {waypoint_id, player_name, visible}
+function exports.load_waypoint_overrides(waypoint_overrides)
+	local num_loaded = 0
+	for _, wp_override in pairs(waypoint_overrides) do
+		local wpid = wp_override.waypoint_id
+		local plname = wp_override.player_name
+		local of_wp = all_wp_player_overrides[wpid] or {}
+		of_wp[plname] = {
+			visible = wp_override.visible
+		}
+		all_wp_player_overrides[wpid] = of_wp
+		num_loaded = num_loaded + 1
 	end
+	return num_loaded
 end
 
 function exports.load_player_defaults(player_defaults)
+	local num_loaded = 0
 	all_player_defaults = player_defaults
+	return num_loaded
 end
 
 -- same as table_of_tables[key_first][key_second] but with nil handling

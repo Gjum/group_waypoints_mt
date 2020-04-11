@@ -43,8 +43,15 @@ group_waypoints.on_player_defaults_updated = internal.settings.on_player_default
 group_waypoints.on_group_setting_updated = internal.settings.on_group_setting_updated
 group_waypoints.on_waypoint_setting_updated = internal.settings.on_waypoint_setting_updated
 
--- internal.db = loadfile(modpath .. "/db.lua")(internal)
--- XXX load waypoints and settings from db
+internal.insecure_env = minetest.request_insecure_environment() or
+	error("group_waypoints needs to be a trusted mod. " ..
+		"Add it to `secure.trusted_mods` in minetest.conf")
+
+internal.db = loadfile(modpath .. "/db.lua")(internal)
+local num_loaded_waypoints = internal.waypoints.load_waypoints(internal.db.load_all_waypoints())
+minetest.log("[group_waypoints] Loaded " .. num_loaded_waypoints .. " waypoints from Postgres")
+local num_loaded_wp_overrides = internal.settings.load_waypoint_overrides(internal.db.load_all_waypoint_player_overrides())
+minetest.log("[group_waypoints] Loaded " .. num_loaded_wp_overrides .. " waypoint player overrides from Postgres")
 
 internal.hud = loadfile(modpath .. "/hud.lua")(internal)
 group_waypoints.allow_player_see_waypoint = internal.hud.allow_player_see_waypoint
