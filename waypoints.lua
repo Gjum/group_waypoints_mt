@@ -54,9 +54,9 @@ end
 -- player pos -> block pos
 local function pos_adjusted(pos)
 	return {
-		x = math.floor(pos.x),
-		y = math.ceil(pos.y),
-		z = math.floor(pos.z)
+		x = math.floor(pos.x + 0.5),
+		y = math.floor(pos.y + 0.5),
+		z = math.floor(pos.z + 0.5)
 	}
 end
 
