@@ -65,4 +65,4 @@ loadfile(modpath .. "/mt_events.lua")(internal)
 
 --=== integrations ===--
 
--- TODO jukealert: update waypoint for player's last seen location, in notifier's reinforcement group
+loadfile(modpath .. "/block_alert_events.lua")(internal)

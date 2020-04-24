@@ -2,6 +2,7 @@ unused_args = false
 allow_defined_top = true
 
 globals = {
+	"notifier",
 	"pm",
 	"group_waypoints"
 }
