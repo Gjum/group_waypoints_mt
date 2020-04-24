@@ -29,7 +29,7 @@ local function prep_db()
 		CREATE TABLE IF NOT EXISTS waypoints (
 			id VARCHAR(16) NOT NULL,
 			groupid VARCHAR(16) NOT NULL,
-			creator VARCHAR(32) NOT NULL,
+			creator VARCHAR(16) NOT NULL,
 			created_at BIGINT NOT NULL,
 			x INTEGER NOT NULL,
 			y INTEGER NOT NULL,
@@ -41,9 +41,9 @@ local function prep_db()
 	assert(pmutils.prepare(db, [[
 		CREATE TABLE IF NOT EXISTS waypoint_player_overrides (
 			waypoint_id VARCHAR(16) REFERENCES waypoints(id),
-			player_name VARCHAR(32) NOT NULL,
+			player_id VARCHAR(16) NOT NULL,
 			visible BOOLEAN NOT NULL DEFAULT TRUE,
-			PRIMARY KEY (waypoint_id, player_name)
+			PRIMARY KEY (waypoint_id, player_id)
 		)]]))
 end
 
@@ -131,7 +131,7 @@ function exports.load_all_waypoint_player_overrides()
 	while row do
 		table.insert(overrides, {
 			waypoint_id = row.waypoint_id,
-			player_name = row.player_name,
+			player_id = row.player_id,
 			visible = row.visible
 		})
 		row = cur:fetch(row, "a")
@@ -140,15 +140,15 @@ function exports.load_all_waypoint_player_overrides()
 end
 
 local QUERY_INSERT_WAYPOINT_PLAYER_OVERRIDE = [[
-	INSERT INTO waypoint_player_overrides (waypoint_id, player_name, visible)
+	INSERT INTO waypoint_player_overrides (waypoint_id, player_id, visible)
 	VALUES (?, ?, ?)
-	ON CONFLICT (waypoint_id, player_name) DO UPDATE SET
+	ON CONFLICT (waypoint_id, player_id) DO UPDATE SET
 	visible = EXCLUDED.visible
 ]]
 
-function exports.store_waypoint_player_override(waypoint_id, player_name, override)
+function exports.store_waypoint_player_override(waypoint_id, player_id, override)
 	return assert(pmutils.prepare(db, QUERY_INSERT_WAYPOINT_PLAYER_OVERRIDE,
-		waypoint_id, player_name, override.visible))
+		waypoint_id, player_id, override.visible))
 end
 
 --=== event handlers ===--
@@ -173,7 +173,7 @@ group_waypoints.on_waypoint_deleted(
 
 group_waypoints.on_waypoint_setting_updated(
 	function(event)
-		exports.store_waypoint_player_override(event.wpid, event.plname, event.config)
+		exports.store_waypoint_player_override(event.wpid, event.player_id, event.config)
 	end
 )
 

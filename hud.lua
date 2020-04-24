@@ -19,9 +19,10 @@ local all_waypoint_huds = {} -- wpid -> plname -> hud_id
 
 local function show_waypoint_to_player(plname, waypoint)
 	local player = minetest.get_player_by_name(plname)
+	local player_id = pm_shim.get_player_id_for_name(plname)
 	local group_name = pm_shim.get_group_name(waypoint.groupid)
 	local color = waypoint.color
-		or group_waypoints.get_group_color_for_player(plname, waypoint.groupid)
+		or group_waypoints.get_group_color_for_player(player_id, waypoint.groupid)
 		or 0xDDFFDD
 
 	local hud_id =
@@ -67,20 +68,21 @@ end
 function exports.update_waypoint_for_player(plname, waypoint)
 	local wpid = waypoint.id
 	local groupid = waypoint.groupid
+	local player_id = pm_shim.get_player_id_for_name(plname)
 
-	local player_can_see_waypoint = utils.emit_allowed_check(waypoint_visible_checks, {plname=plname, waypoint=waypoint})
+	local player_can_see_waypoint = utils.emit_allowed_check(waypoint_visible_checks, {player_id=player_id, waypoint=waypoint})
 	if not player_can_see_waypoint then
 		hide_waypoint_from_player(plname, wpid)
 		return
 	end
 
-	local player_can_see_group = group_waypoints.get_group_visible_for_player(plname, groupid)
+	local player_can_see_group = group_waypoints.get_group_visible_for_player(player_id, groupid)
 	if not player_can_see_group then
 		hide_waypoint_from_player(plname, wpid)
 		return
 	end
 
-	local player_disabled_waypoint = not group_waypoints.get_waypoint_visible_for_player(plname, wpid)
+	local player_disabled_waypoint = not group_waypoints.get_waypoint_visible_for_player(player_id, wpid)
 	if player_disabled_waypoint then
 		hide_waypoint_from_player(plname, wpid)
 		return
@@ -88,7 +90,7 @@ function exports.update_waypoint_for_player(plname, waypoint)
 
 	-- TODO check waypoint distance
 	-- local ppos = player:get_pos()
-	-- local group_range = group_waypoints.get_group_range_for_player(plname, groupid)
+	-- local group_range = group_waypoints.get_group_range_for_player(player_id, groupid)
 	-- if vector.distance(ppos, waypoint.pos) > group_range then
 	-- 	hide_waypoint_from_player(plname, wpid)
 	-- 	return
@@ -114,7 +116,8 @@ function exports.update_waypoint(waypoint)
 
 	-- remove from all players that were seeing it but may no longer see it
 	for plname, hud_id in pairs(all_waypoint_huds[wpid] or {}) do
-		if not utils.emit_allowed_check(waypoint_visible_checks, {plname=plname, waypoint=waypoint}) then
+		local player_id = pm_shim.get_player_id_for_name(plname)
+		if not utils.emit_allowed_check(waypoint_visible_checks, {player_id=player_id, waypoint=waypoint}) then
 			hide_waypoint_from_player(plname, wpid)
 		end
 	end

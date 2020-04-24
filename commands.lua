@@ -33,12 +33,13 @@ end
 
 local function cmd_create(plname, param_group, ...)
 	local param_name = table.concat({...}, " ")
+	local player_id = pm_shim.get_player_id_for_name(plname)
 	local groupid = nil
 	if param_group then
 		groupid = pm_shim.get_group_id_by_name(param_group)
 	end
 	if not groupid then
-		groupid = (group_waypoints.get_defaults_for_player(plname) or {}).groupid
+		groupid = (group_waypoints.get_defaults_for_player(player_id) or {}).groupid
 	end
 	if not groupid then
 		return nil, "Cannot create waypoint: No group specified, and no default group found. Usage: /wp new [group] [name]"
@@ -55,12 +56,12 @@ local function cmd_create(plname, param_group, ...)
 		name = param_name,
 		pos = player:get_pos(),
 		groupid = groupid,
-		creator = plname
+		creator = player_id
 	}
 
-	local defaults = group_waypoints.get_defaults_for_player(plname) or {}
+	local defaults = group_waypoints.get_defaults_for_player(player_id) or {}
 	defaults.groupid = wp.groupid
-	group_waypoints.set_defaults_for_player(plname, defaults)
+	group_waypoints.set_defaults_for_player(player_id, defaults)
 
 	return ("Created waypoint `%s` at %s in group `%s`"):format(
 		wp.name,

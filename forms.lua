@@ -98,8 +98,9 @@ local function build_table_cells(plname, state)
 
 	local player = minetest.get_player_by_name(plname)
 	assert(player, "Unknown player name: " .. plname)
+	local player_id = pm_shim.get_player_id_for_name(plname)
 	local player_pos = player:get_pos()
-	local waypoints = group_waypoints.get_waypoints_for_player(plname)
+	local waypoints = group_waypoints.get_waypoints_for_player(player_id)
 
 	local now = os.time()
 	local sorted_waypoints = {}
@@ -113,8 +114,8 @@ local function build_table_cells(plname, state)
 			s_wp.selected = "o"
 		end
 
-		if group_waypoints.get_waypoint_visible_for_player(plname, wpid) then
-			if group_waypoints.get_group_visible_for_player(plname, waypoint.groupid) then
+		if group_waypoints.get_waypoint_visible_for_player(player_id, wpid) then
+			if group_waypoints.get_group_visible_for_player(player_id, waypoint.groupid) then
 				s_wp.visible_text = "shown"
 				s_wp.visible = 1
 			else
@@ -233,18 +234,20 @@ function exports.show_wplist_formspec(plname)
 		}
 	end
 
+	local player_id = pm_shim.get_player_id_for_name(plname)
+
 	local num_selected_showable = 0
 	local num_selected_hideable = 0
 	local num_selected_deletable = 0
 	for wpid, waypoint in pairs(get_all_selected_waypoints(state) or {}) do
-		local is_visible = group_waypoints.get_waypoint_visible_for_player(plname, waypoint.id)
-			and group_waypoints.get_group_visible_for_player(plname, waypoint.groupid)
+		local is_visible = group_waypoints.get_waypoint_visible_for_player(player_id, waypoint.id)
+			and group_waypoints.get_group_visible_for_player(player_id, waypoint.groupid)
 		if is_visible then
 			num_selected_hideable = num_selected_hideable + 1
 		else
 			num_selected_showable = num_selected_showable + 1
 		end
-		if group_waypoints.can_player_delete_waypoint(plname, waypoint) then
+		if group_waypoints.can_player_delete_waypoint(player_id, waypoint) then
 			num_selected_deletable = num_selected_deletable + 1
 		end
 	end
@@ -289,18 +292,19 @@ local function handle_sort_clicked(state, column)
 end
 
 local function toggle_waypoint_visibility(plname, waypoint)
-	if group_waypoints.get_waypoint_visible_for_player(plname, waypoint.id) then
-		if group_waypoints.get_group_visible_for_player(plname, waypoint.groupid) then
+	local player_id = pm_shim.get_player_id_for_name(plname)
+	if group_waypoints.get_waypoint_visible_for_player(player_id, waypoint.id) then
+		if group_waypoints.get_group_visible_for_player(player_id, waypoint.groupid) then
 			-- is visible, make invisible
-			group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, false)
+			group_waypoints.set_waypoint_visible_for_player(player_id, waypoint.id, false)
 		else
 			-- is visible but group is invisible. make group visible
-			group_waypoints.set_group_visible_for_player(plname, waypoint.groupid, true)
+			group_waypoints.set_group_visible_for_player(player_id, waypoint.groupid, true)
 		end
 	else
 		-- invisible. make waypoint and its group visible
-		group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, true)
-		group_waypoints.set_group_visible_for_player(plname, waypoint.groupid, true)
+		group_waypoints.set_waypoint_visible_for_player(player_id, waypoint.id, true)
+		group_waypoints.set_group_visible_for_player(player_id, waypoint.groupid, true)
 	end
 end
 
@@ -388,32 +392,34 @@ local function handle_waypoint_editor(plname, fields, state)
 		return -- the editor contains text but the waypoint should not be updated yet
 	end
 
-	group_waypoints.set_waypoint_pos(plname, waypoint.id, pos)
-	group_waypoints.set_waypoint_name(plname, waypoint.id, name)
+	local player_id = pm_shim.get_player_id_for_name(plname)
+	group_waypoints.set_waypoint_pos(player_id, waypoint.id, pos)
+	group_waypoints.set_waypoint_name(player_id, waypoint.id, name)
 
 	exports.show_wplist_formspec(plname)
 end
 
 local function handle_buttons(plname, fields, state)
+	local player_id = pm_shim.get_player_id_for_name(plname)
 	if fields.btn_show_selected then
 		local visible_groups = {}
 		for wpid, waypoint in pairs(get_all_selected_waypoints(state)) do
-			group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, true)
+			group_waypoints.set_waypoint_visible_for_player(player_id, waypoint.id, true)
 			visible_groups[waypoint.groupid] = true
 		end
 		for groupid, _ in pairs(visible_groups) do
-			group_waypoints.set_group_visible_for_player(plname, groupid, true)
+			group_waypoints.set_group_visible_for_player(player_id, groupid, true)
 		end
 		exports.show_wplist_formspec(plname)
 	elseif fields.btn_hide_selected then
 		-- TODO consider: if hiding all in a group, just hide group instead of each waypoint individually
 		for wpid, waypoint in pairs(get_all_selected_waypoints(state)) do
-			group_waypoints.set_waypoint_visible_for_player(plname, waypoint.id, false)
+			group_waypoints.set_waypoint_visible_for_player(player_id, waypoint.id, false)
 		end
 		exports.show_wplist_formspec(plname)
 	elseif fields.btn_delete_selected then
 		for wpid, waypoint in pairs(get_all_selected_waypoints(state)) do
-			group_waypoints.delete_waypoint(plname, wpid)
+			group_waypoints.delete_waypoint(player_id, wpid)
 		end
 		exports.show_wplist_formspec(plname)
 	end
