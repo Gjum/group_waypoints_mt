@@ -8,6 +8,7 @@ globals = {
 read_globals = {
 	string = {fields = {"split"}},
 	table = {fields = {"copy", "getn"}},
+	"strsub",
 	-- civtest
 	"pm",
 	"pmutils",
