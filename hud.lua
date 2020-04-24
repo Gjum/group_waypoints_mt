@@ -19,6 +19,10 @@ local all_waypoint_huds = {} -- wpid -> plname -> hud_id
 
 local function show_waypoint_to_player(plname, waypoint)
 	local player = minetest.get_player_by_name(plname)
+	if not player then
+		return
+	end
+
 	local group_name = pm_shim.get_group_name(waypoint.groupid)
 	local color = waypoint.color
 		or group_waypoints.get_group_color_for_player(plname, waypoint.groupid)
@@ -58,13 +62,20 @@ local function hide_waypoint_from_player(plname, wpid)
 	end
 
 	local player = minetest.get_player_by_name(plname)
-	player:hud_remove(hud_id)
+	if player then
+		player:hud_remove(hud_id)
+	end
 
 	all_player_huds[plname][wpid] = nil
 	all_waypoint_huds[wpid][plname] = nil
 end
 
 function exports.update_waypoint_for_player(plname, waypoint)
+	local player = minetest.get_player_by_name(plname)
+	if not player then
+		return
+	end
+
 	local wpid = waypoint.id
 	local groupid = waypoint.groupid
 
@@ -97,7 +108,6 @@ function exports.update_waypoint_for_player(plname, waypoint)
 	local existing_hud_id = (all_player_huds[plname] or {})[waypoint.id]
 	if existing_hud_id then
 		-- TODO update hud instead of remove+create
-		local player = minetest.get_player_by_name(plname)
 		player:hud_remove(existing_hud_id)
 		show_waypoint_to_player(plname, waypoint)
 
@@ -166,7 +176,9 @@ group_waypoints.on_waypoint_deleted(
 		local waypoint_hud_ids = all_waypoint_huds[wpid] or {}
 		for plname, hud_id in pairs(waypoint_hud_ids) do
 			local player = minetest.get_player_by_name(plname)
-			player:hud_remove(hud_id)
+			if player then
+				player:hud_remove(hud_id)
+			end
 			all_player_huds[plname][wpid] = nil
 		end
 		all_waypoint_huds[wpid] = nil
