@@ -8,6 +8,8 @@ local pm_shim = (...).pm_shim
 
 local exports = {}
 
+local wp_name_length_limit = minetest.settings:get("group_waypoints_name_length_limit") or 100
+
 --=== events ===--
 
 local created_handlers = {}
@@ -79,6 +81,8 @@ local function clean_wp(wp_in)
 	if not wp.name or wp.name == "" then
 		wp.name = utils.pos_to_str(wp.pos)
 	end
+
+	wp.name = strsub(wp.name, 1, wp_name_length_limit)
 
 	return wp
 end
