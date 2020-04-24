@@ -82,7 +82,7 @@ local function clean_wp(wp_in)
 		wp.name = utils.pos_to_str(wp.pos)
 	end
 
-	wp.name = strsub(wp.name, 1, wp_name_length_limit)
+	wp.name = wp.name:sub(1, wp_name_length_limit)
 
 	return wp
 end
