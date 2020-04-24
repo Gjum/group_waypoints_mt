@@ -4,7 +4,7 @@ local pm_shim = (...).pm_shim
 
 group_waypoints.allow_waypoint_created(
 	function(plname, waypoint)
-		return pm_shim.player_can_modify_group(plname, waypoint.groupid)
+		return pm_shim.player_can_see_group(plname, waypoint.groupid)
 	end
 )
 
