@@ -19,6 +19,10 @@ local all_waypoint_huds = {} -- wpid -> plname -> hud_id
 
 local function show_waypoint_to_player(plname, waypoint)
 	local player = minetest.get_player_by_name(plname)
+        if not player then
+           return
+        end
+
 	local group_name = pm_shim.get_group_name(waypoint.groupid)
 	local color = waypoint.color
 		or group_waypoints.get_group_color_for_player(plname, waypoint.groupid)
