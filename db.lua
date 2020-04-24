@@ -1,6 +1,7 @@
 -- This module handles loading/storing all mod state from/to Postgres.
 
 local insecure_env = (...).insecure_env
+local pm_shim = (...).pm_shim
 
 local exports = {}
 
@@ -40,7 +41,7 @@ local function prep_db()
 
 	assert(pmutils.prepare(db, [[
 		CREATE TABLE IF NOT EXISTS waypoint_player_overrides (
-			waypoint_id VARCHAR(16) REFERENCES waypoints(id),
+			waypoint_id VARCHAR(16) REFERENCES waypoints(id) ON DELETE CASCADE,
 			player_name VARCHAR(32) NOT NULL,
 			visible BOOLEAN NOT NULL DEFAULT TRUE,
 			PRIMARY KEY (waypoint_id, player_name)
@@ -108,13 +109,7 @@ local QUERY_DELETE_WAYPOINT = [[
 	WHERE id = ?
 ]]
 
-local QUERY_DELETE_WAYPOINT_OVERRIDES = [[
-	DELETE FROM waypoint_player_overrides
-	WHERE waypoint_id = ?
-]]
-
 function exports.delete_waypoint(wpid)
-	assert(pmutils.prepare(db, QUERY_DELETE_WAYPOINT_OVERRIDES, wpid))
 	assert(pmutils.prepare(db, QUERY_DELETE_WAYPOINT, wpid))
 end
 
@@ -174,6 +169,17 @@ group_waypoints.on_waypoint_deleted(
 group_waypoints.on_waypoint_setting_updated(
 	function(event)
 		exports.store_waypoint_player_override(event.wpid, event.plname, event.config)
+	end
+)
+
+local QUERY_DELETE_GROUP_WAYPOINTS = [[
+	DELETE FROM waypoints
+	WHERE groupid = ?
+]]
+
+pm_shim.on_pm_group_deleted(
+	function(groupid)
+		assert(pmutils.prepare(db, QUERY_DELETE_GROUP_WAYPOINTS, groupid))
 	end
 )
 

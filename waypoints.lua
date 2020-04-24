@@ -139,7 +139,7 @@ function exports.create_waypoint(wp_in)
 
 	local plname = wp.creator
 
-	if not utils.emit_allowed_check(created_checks, {plname=plname, waypoint=wp}) then
+	if not utils.emit_allowed_check(created_checks, {plname = plname, waypoint = wp}) then
 		error("Player '" .. plname .. "' cannot create waypoint in group " .. dump(wp.groupid))
 	end
 
@@ -154,11 +154,11 @@ end
 --=== delete/update ===--
 
 function exports.can_player_delete_waypoint(plname, wp)
-	return utils.emit_allowed_check(deleted_checks, {plname=plname, waypoint=wp})
+	return utils.emit_allowed_check(deleted_checks, {plname = plname, waypoint = wp})
 end
 
 function exports.can_player_update_waypoint(plname, wp)
-	return utils.emit_allowed_check(updated_checks, {plname=plname, waypoint=wp})
+	return utils.emit_allowed_check(updated_checks, {plname = plname, waypoint = wp})
 end
 
 --- returns true if successful, false if player is not allowed to delete the waypoint
@@ -238,5 +238,18 @@ function exports.set_waypoint_color(plname, wpid, color)
 	utils.emit_event(updated_handlers, wp)
 	return wp
 end
+
+--=== event handlers ===--
+
+pm_shim.on_pm_group_deleted(
+	function(groupid)
+		local group_wps = all_wps_by_groupid[groupid]
+		for wpid, wp in pairs(group_wps or {}) do
+			all_wps_by_id[wpid] = nil
+			utils.emit_event(deleted_handlers, wp)
+		end
+		all_wps_by_groupid[groupid] = nil
+	end
+)
 
 return exports

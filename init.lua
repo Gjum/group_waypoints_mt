@@ -70,8 +70,4 @@ loadfile(modpath .. "/mt_events.lua")(internal)
 
 loadfile(modpath .. "/wp_actions.lua")(internal)
 
--- TODO on player role change: re-check all waypoints in that group for that player
-
--- TODO on group deletion: delete all waypoints in it; settings: all_group_overrides[groupid] = nil
-
 -- TODO jukealert: update waypoint for player's last seen location, in notifier's reinforcement group

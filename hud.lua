@@ -209,4 +209,23 @@ group_waypoints.on_waypoint_setting_updated(
 	end
 )
 
+local function update_waypoints_in_group_for_player(plname, groupid)
+	local group_wps = group_waypoints.get_waypoints_in_group(groupid)
+	for wpid, waypoint in pairs(group_wps or {}) do
+		exports.update_waypoint_for_player(plname, waypoint)
+	end
+end
+
+pm_shim.on_pm_player_added(
+	function(event)
+		update_waypoints_in_group_for_player(event.plname, event.groupid)
+	end
+)
+
+pm_shim.on_pm_player_removed(
+	function(event)
+		update_waypoints_in_group_for_player(event.plname, event.groupid)
+	end
+)
+
 return exports

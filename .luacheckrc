@@ -2,6 +2,7 @@ unused_args = false
 allow_defined_top = true
 
 globals = {
+	"pm",
 	"group_waypoints"
 }
 
@@ -10,7 +11,6 @@ read_globals = {
 	table = {fields = {"copy", "getn"}},
 	"strsub",
 	-- civtest
-	"pm",
 	"pmutils",
 	-- Builtin
 	"DIR_DELIM",

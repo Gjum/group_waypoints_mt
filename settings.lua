@@ -2,6 +2,7 @@
 
 -- TODO: after each set_*, clean up configs where all entries are null
 
+local pm_shim = (...).pm_shim
 local utils = (...).utils
 
 local exports = {}
@@ -157,6 +158,19 @@ end
 group_waypoints.on_waypoint_deleted(
 	function(wpid)
 		all_wp_player_overrides[wpid] = nil
+	end
+)
+
+pm_shim.on_pm_group_deleted(
+	function(groupid)
+		all_group_overrides[groupid] = nil
+
+		for plname, player_defaults in pairs(all_player_defaults) do
+			if player_defaults.groupid == groupid then
+				player_defaults.groupid = nil
+				exports.set_defaults_for_player(plname, player_defaults)
+			end
+		end
 	end
 )
 
