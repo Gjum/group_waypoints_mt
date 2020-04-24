@@ -19,14 +19,11 @@ group_waypoints.delete_waypoint = internal.waypoints.delete_waypoint
 group_waypoints.set_waypoint_name = internal.waypoints.set_waypoint_name
 group_waypoints.set_waypoint_pos = internal.waypoints.set_waypoint_pos
 group_waypoints.set_waypoint_color = internal.waypoints.set_waypoint_color
-group_waypoints.can_player_update_waypoint = internal.waypoints.can_player_update_waypoint
-group_waypoints.can_player_delete_waypoint = internal.waypoints.can_player_delete_waypoint
+group_waypoints.player_can_update_waypoint = internal.waypoints.player_can_update_waypoint
+group_waypoints.player_can_delete_waypoint = internal.waypoints.player_can_delete_waypoint
 group_waypoints.on_waypoint_created = internal.waypoints.on_waypoint_created
 group_waypoints.on_waypoint_updated = internal.waypoints.on_waypoint_updated
 group_waypoints.on_waypoint_deleted = internal.waypoints.on_waypoint_deleted
-group_waypoints.allow_waypoint_created = internal.waypoints.allow_waypoint_created
-group_waypoints.allow_waypoint_updated = internal.waypoints.allow_waypoint_updated
-group_waypoints.allow_waypoint_deleted = internal.waypoints.allow_waypoint_deleted
 
 internal.settings = loadfile(modpath .. "/settings.lua")(internal)
 group_waypoints.get_defaults_for_player = internal.settings.get_defaults_for_player
@@ -57,7 +54,7 @@ local num_loaded_wp_overrides = internal.settings.load_waypoint_overrides(
 minetest.log("[group_waypoints] Loaded " .. num_loaded_wp_overrides .. " waypoint player overrides from Postgres")
 
 internal.hud = loadfile(modpath .. "/hud.lua")(internal)
-group_waypoints.allow_player_see_waypoint = internal.hud.allow_player_see_waypoint
+group_waypoints.player_can_see_waypoint = internal.hud.player_can_see_waypoint
 
 internal.forms = loadfile(modpath .. "/forms.lua")(internal)
 group_waypoints.show_wplist_formspec = internal.forms.show_wplist_formspec
@@ -67,7 +64,5 @@ loadfile(modpath .. "/commands.lua")(internal)
 loadfile(modpath .. "/mt_events.lua")(internal)
 
 --=== integrations ===--
-
-loadfile(modpath .. "/wp_actions.lua")(internal)
 
 -- TODO jukealert: update waypoint for player's last seen location, in notifier's reinforcement group

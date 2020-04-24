@@ -1,16 +1,8 @@
 -- This module updates the player HUD to display the visible waypoints.
 
-local utils = (...).utils
 local pm_shim = (...).pm_shim
 
 local exports = {}
-
---=== events ===--
-
-local waypoint_visible_checks = {}
-function exports.allow_player_see_waypoint(check)
-	waypoint_visible_checks[#waypoint_visible_checks + 1] = check
-end
 
 --=== state ===--
 
@@ -70,6 +62,10 @@ local function hide_waypoint_from_player(plname, wpid)
 	all_waypoint_huds[wpid][plname] = nil
 end
 
+function exports.player_can_see_waypoint(plname, waypoint)
+	return pm_shim.player_can_see_group(plname, waypoint.groupid)
+end
+
 function exports.update_waypoint_for_player(plname, waypoint)
 	local player = minetest.get_player_by_name(plname)
 	if not player then
@@ -79,8 +75,7 @@ function exports.update_waypoint_for_player(plname, waypoint)
 	local wpid = waypoint.id
 	local groupid = waypoint.groupid
 
-	local player_can_see_waypoint = utils.emit_allowed_check(waypoint_visible_checks, {plname=plname, waypoint=waypoint})
-	if not player_can_see_waypoint then
+	if not exports.player_can_see_waypoint(plname, waypoint) then
 		hide_waypoint_from_player(plname, wpid)
 		return
 	end
@@ -124,7 +119,7 @@ function exports.update_waypoint(waypoint)
 
 	-- remove from all players that were seeing it but may no longer see it
 	for plname, hud_id in pairs(all_waypoint_huds[wpid] or {}) do
-		if not utils.emit_allowed_check(waypoint_visible_checks, {plname=plname, waypoint=waypoint}) then
+		if not exports.player_can_see_waypoint(plname, waypoint) then
 			hide_waypoint_from_player(plname, wpid)
 		end
 	end

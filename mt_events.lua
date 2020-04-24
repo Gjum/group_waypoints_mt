@@ -23,6 +23,7 @@ minetest.register_on_dieplayer(
 		group_waypoints.create_waypoint {
 			name = plname .. " Death",
 			pos = player:get_pos(),
+			kind = "death",
 			groupid = groupid,
 			creator = plname
 		}

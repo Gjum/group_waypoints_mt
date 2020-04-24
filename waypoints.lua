@@ -1,7 +1,7 @@
 -- This module provides CRUD operations on waypoint objects.
 -- Events are emitted for C/U/D, see the on_waypoint_* functions.
--- C/U/D check if the player has access, via the corresponding allow_waypoint_* event.
--- They throw an error, so the caller needs to check access before calling.
+-- C/U/D throw an error when the given player can't create that waypoint,
+-- so the caller needs to check access before calling.
 
 local utils = (...).utils
 local pm_shim = (...).pm_shim
@@ -25,21 +25,6 @@ end
 local deleted_handlers = {}
 function exports.on_waypoint_deleted(handler)
 	deleted_handlers[#deleted_handlers + 1] = handler
-end
-
-local created_checks = {}
-function exports.allow_waypoint_created(check)
-	created_checks[#created_checks + 1] = check
-end
-
-local updated_checks = {}
-function exports.allow_waypoint_updated(check)
-	updated_checks[#updated_checks + 1] = check
-end
-
-local deleted_checks = {}
-function exports.allow_waypoint_deleted(check)
-	deleted_checks[#deleted_checks + 1] = check
 end
 
 --=== state and access ===--
@@ -73,6 +58,7 @@ local function clean_wp(wp_in)
 		groupid = wp_in.groupid,
 		creator = wp_in.creator,
 		created_at = wp_in.created_at or os.time(),
+		kind = wp_in.kind or "playermade",
 		name = wp_in.name,
 		pos = pos_adjusted(wp_in.pos),
 		color = wp_in.color -- may be nil, in that case the player's group color is used
@@ -124,7 +110,28 @@ function exports.load_waypoints(waypoints)
 	return num_loaded
 end
 
---=== creation ===--
+--=== create/delete/update ===--
+
+function exports.player_can_create_waypoint(creator, waypoint)
+	if waypoint.kind ~= "playermade" then
+		return waypoint.creator == creator
+	else
+		return pm_shim.player_can_see_group(creator, waypoint.groupid)
+	end
+end
+
+function exports.player_can_update_waypoint(editor, waypoint)
+	if waypoint.creator == editor then
+		return waypoint.kind ~= "playermade"
+			or pm_shim.player_can_see_group(editor, waypoint.groupid)
+	else
+		return pm_shim.player_can_modify_group(editor, waypoint.groupid)
+	end
+end
+
+function exports.player_can_delete_waypoint(deletor, waypoint)
+	return exports.player_can_update_waypoint(deletor, waypoint)
+end
 
 function exports.create_waypoint(wp_in)
 	if not wp_in.groupid then
@@ -139,7 +146,7 @@ function exports.create_waypoint(wp_in)
 
 	local plname = wp.creator
 
-	if not utils.emit_allowed_check(created_checks, {plname = plname, waypoint = wp}) then
+	if not exports.player_can_create_waypoint(plname, wp) then
 		error("Player '" .. plname .. "' cannot create waypoint in group " .. dump(wp.groupid))
 	end
 
@@ -151,16 +158,6 @@ function exports.create_waypoint(wp_in)
 	return wp
 end
 
---=== delete/update ===--
-
-function exports.can_player_delete_waypoint(plname, wp)
-	return utils.emit_allowed_check(deleted_checks, {plname = plname, waypoint = wp})
-end
-
-function exports.can_player_update_waypoint(plname, wp)
-	return utils.emit_allowed_check(updated_checks, {plname = plname, waypoint = wp})
-end
-
 --- returns true if successful, false if player is not allowed to delete the waypoint
 function exports.delete_waypoint(plname, wpid)
 	local wp = all_wps_by_id[wpid]
@@ -168,7 +165,7 @@ function exports.delete_waypoint(plname, wpid)
 		minetest.log("Player " .. plname .. " cannot delete unknown waypoint id " .. wpid)
 		return false
 	end
-	if not exports.can_player_delete_waypoint(plname, wp) then
+	if not exports.player_can_delete_waypoint(plname, wp) then
 		minetest.log("Player '" .. plname .. "' is not allowed to delete waypoint id " .. wpid)
 		return false
 	end
@@ -188,7 +185,7 @@ function exports.set_waypoint_name(plname, wpid, name)
 		minetest.log("Player " .. plname .. " cannot update unknown waypoint id " .. dump2(wpid))
 		return nil
 	end
-	if not exports.can_player_update_waypoint(plname, wp) then
+	if not exports.player_can_update_waypoint(plname, wp) then
 		minetest.log(("Player '%s' is not allowed to rename waypoint id %s to %s"):format(
 			plname, wpid, dump2(name)))
 		return nil
@@ -210,7 +207,7 @@ function exports.set_waypoint_pos(plname, wpid, pos)
 		minetest.log("Player " .. plname .. " cannot update unknown waypoint id " .. dump2(wpid))
 		return nil
 	end
-	if not exports.can_player_update_waypoint(plname, wp) then
+	if not exports.player_can_update_waypoint(plname, wp) then
 		minetest.log(("Player '%s' is not allowed to move waypoint id %s to %s"):format(
 			plname, wpid, utils.pos_to_str(pos)))
 		return nil
@@ -228,7 +225,7 @@ function exports.set_waypoint_color(plname, wpid, color)
 		minetest.log("Player " .. plname .. " cannot update unknown waypoint id " .. dump2(wpid))
 		return nil
 	end
-	if not exports.can_player_update_waypoint(plname, wp) then
+	if not exports.player_can_update_waypoint(plname, wp) then
 		minetest.log(("Player '%s' is not allowed to set waypoint id %s color to %s"):format(
 			plname, wpid, dump2(color)))
 		return nil

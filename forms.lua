@@ -244,7 +244,7 @@ function exports.show_wplist_formspec(plname)
 		else
 			num_selected_showable = num_selected_showable + 1
 		end
-		if group_waypoints.can_player_delete_waypoint(plname, waypoint) then
+		if group_waypoints.player_can_delete_waypoint(plname, waypoint) then
 			num_selected_deletable = num_selected_deletable + 1
 		end
 	end

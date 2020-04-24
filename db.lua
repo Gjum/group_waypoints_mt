@@ -35,6 +35,7 @@ local function prep_db()
 			x INTEGER NOT NULL,
 			y INTEGER NOT NULL,
 			z INTEGER NOT NULL,
+			kind TEXT NOT NULL,
 			name TEXT NOT NULL,
 			PRIMARY KEY (id)
 		)]]))
@@ -72,6 +73,7 @@ function exports.load_all_waypoints()
 			creator = row.creator,
 			created_at = row.created_at,
 			pos = {x = row.x, y = row.y, z = row.z},
+			kind = row.kind,
 			name = row.name,
 			color = row.color
 		})
@@ -81,14 +83,15 @@ function exports.load_all_waypoints()
 end
 
 local QUERY_INSERT_WAYPOINT = [[
-	INSERT INTO waypoints (id, groupid, creator, created_at, x, y, z, name)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO waypoints (id, groupid, creator, created_at, x, y, z, kind, name)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	ON CONFLICT (id) DO UPDATE SET
 	groupid = EXCLUDED.groupid,
 	creator = EXCLUDED.creator,
 	x = EXCLUDED.x,
 	y = EXCLUDED.y,
 	z = EXCLUDED.z,
+	kind = EXCLUDED.kind,
 	name = EXCLUDED.name
 ]]
 
