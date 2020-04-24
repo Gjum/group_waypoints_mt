@@ -5,9 +5,9 @@ function exports.pos_to_str(pos, sep)
 	return pos.x .. sep .. pos.y .. sep .. pos.z
 end
 
-function exports.emit_allowed_check(checks, plname, event)
+function exports.emit_allowed_check(checks, event)
 	for _, check in pairs(checks) do
-		if not check(plname, event) then
+		if not check(event) then
 			return false
 		end
 	end

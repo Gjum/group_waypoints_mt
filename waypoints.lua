@@ -139,7 +139,7 @@ function exports.create_waypoint(wp_in)
 
 	local plname = wp.creator
 
-	if not utils.emit_allowed_check(created_checks, plname, wp) then
+	if not utils.emit_allowed_check(created_checks, {plname=plname, waypoint=wp}) then
 		error("Player '" .. plname .. "' cannot create waypoint in group " .. dump(wp.groupid))
 	end
 
@@ -154,11 +154,11 @@ end
 --=== delete/update ===--
 
 function exports.can_player_delete_waypoint(plname, wp)
-	return utils.emit_allowed_check(deleted_checks, plname, wp)
+	return utils.emit_allowed_check(deleted_checks, {plname=plname, waypoint=wp})
 end
 
 function exports.can_player_update_waypoint(plname, wp)
-	return utils.emit_allowed_check(updated_checks, plname, wp)
+	return utils.emit_allowed_check(updated_checks, {plname=plname, waypoint=wp})
 end
 
 --- returns true if successful, false if player is not allowed to delete the waypoint
