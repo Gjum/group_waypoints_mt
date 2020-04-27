@@ -104,6 +104,7 @@ function exports.store_waypoint(waypoint)
 		waypoint.pos.x,
 		waypoint.pos.y,
 		waypoint.pos.z,
+		waypoint.kind,
 		waypoint.name))
 end
 
