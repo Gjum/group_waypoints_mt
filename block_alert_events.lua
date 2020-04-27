@@ -1,3 +1,7 @@
+if not notifier then
+	return
+end
+
 local mod_creator = ":block_alert"
 local alert_kind = "block_alert"
 
