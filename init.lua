@@ -8,7 +8,7 @@ local modpath = minetest.get_modpath("group_waypoints")
 
 internal.utils = loadfile(modpath .. "/utils.lua")()
 
-internal.pm_shim = loadfile(modpath .. "/pm_shim.lua")()
+internal.pm_shim = loadfile(modpath .. "/pm_shim.lua")(internal)
 
 internal.waypoints = loadfile(modpath .. "/waypoints.lua")(internal)
 group_waypoints.get_waypoint_by_id = internal.waypoints.get_waypoint_by_id
